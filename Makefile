@@ -1,43 +1,53 @@
 CC = gcc
-CFLAGS = -std=c11 -Wall -Wextra -Wpedantic -Wconversion
+CFLAGS = -std=c11 -O3 -Wall -Wextra -Wpedantic -Wconversion
 INCLUDE = -lreadline
 
 SRC_DIR = ./src
 OBJ_DIR = ./obj
-TEST_DIR = ./tests
-TEST_OBJ_DIR = ./obj_tests
 
 TARGET = monkey
 TEST_TARGET = monkey_test
 
-SRCS = $(notdir $(wildcard $(SRC_DIR)/*.c))
+SRCS := $(notdir $(wildcard $(SRC_DIR)/*.c))
+SRCS := $(filter-out test_main.c, $(SRCS))
+SRCS := $(filter-out main.c, $(SRCS))
 OBJS = $(SRCS:.c=.o)
-
 OBJECTS = $(patsubst %.o,$(OBJ_DIR)/%.o,$(OBJS))
-DEPS = $(OBJECTS:.o=.d)
 
-TEST_SRC = $(TEST_DIR)/main.c
-TEST_OBJ = $(TEST_OBJ_DIR)/main.o
-DEPS += $(TEST_OBJ_DIR)/main.d
+RUN_SRCS := $(notdir $(wildcard $(SRC_DIR)/*.c))
+RUN_SRCS := $(filter-out test_main.c, $(RUN_SRCS))
+RUN_OBJS = $(RUN_SRCS:.c=.o)
+RUN_OBJECTS = $(patsubst %.o,$(OBJ_DIR)/%.o,$(RUN_OBJS))
+
+TEST_SRCS := $(notdir $(wildcard $(SRC_DIR)/*.c))
+TEST_SRCS := $(filter-out main.c, $(TEST_SRCS))
+TEST_OBJS = $(TEST_SRCS:.c=.o)
+TEST_OBJECTS = $(patsubst %.o,$(OBJ_DIR)/%.o,$(TEST_OBJS))
+
+DEPS = $(RUN_OBJECTS:.o=.d)
+DEPS += $(TEST_OBJECTS:.o=.d)
 
 all: main
 
-$(OBJ_DIR)/%.o : $(SRC_DIR)/%.c
+$(OBJECTS): $(OBJ_DIR)/%.o : $(SRC_DIR)/%.c
+	$(CC) $(CFLAGS) $(INCLUDE) -c $^ -o $@ -MD $(LDFLAGS)
+
+$(OBJ_DIR)/main.o : $(SRC_DIR)/main.c
 	$(CC) $(CFLAGS) $(INCLUDE) -c $< -o $@ -MD $(LDFLAGS)
 
-main : $(OBJECTS)
-	$(CC) $(CFLAGS) $(OBJECTS) -o $(TARGET) $(LDFLAGS)
+$(OBJ_DIR)/test_main.o : $(SRC_DIR)/test_main.c
+	$(CC) $(CFLAGS) $(INCLUDE) -c $< -o $@ -MD $(LDFLAGS)
 
-$(TEST_OBJ) : $(TEST_SRC)
-	$(CC) $(CFLAGS) -c $< -o $@ -MD $(LDFLAGS)
+main : $(RUN_OBJECTS)
+	$(CC) $(CFLAGS) $(RUN_OBJECTS) -o $(TARGET) $(LDFLAGS)
 
-test : $(TEST_OBJ)
-	$(CC) $(CFLAGS) $(TEST_OBJ) -o $(TEST_TARGET) $(LDFLAGS)
+test : $(TEST_OBJECTS)
+	$(CC) $(CFLAGS) $(TEST_OBJECTS) -o $(TEST_TARGET) $(LDFLAGS)
 
 .PHONY: clean all
 clean:
-	rm -f $(OBJECTS) $(DEPS) $(TARGET)
-	rm -f $(TEST_OBJ) $(TEST_TARGET)
+	rm -f $(RUN_OBJECTS) $(DEPS) $(TARGET) $(TEST_TARGET)
+	rm -f $(TEST_OBJECTS) $(DEPS) $(TARGET) $(TEST_TARGET)
 
 -include $(DEPS)
 

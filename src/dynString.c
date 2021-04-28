@@ -8,7 +8,7 @@ String mkString(const char* str)
     String string = EMPTY_STRING;
     size_t strLen = strlen(str);
 
-    string.capacity = (size_t)((double)(strLen + 1) * 1.1);
+    string.capacity = (strLen + 1) << 1;
     string.len = strLen;
     string.inner = malloc(string.capacity);
     memcpy(string.inner, str, strLen);
@@ -21,7 +21,7 @@ String mkNString(const char* str, size_t strLen)
 {
     String string = (String){0, 0, NULL};
 
-    string.capacity = (size_t)((double)(strLen + 1) * 1.1);
+    string.capacity = (strLen + 1) << 1;
     string.len = strLen;
     string.inner = malloc(string.capacity);
     memcpy(string.inner, str, strLen);
@@ -36,7 +36,7 @@ void appendChar(String* pString, char chr)
 {
     if (pString->len + 1 >= pString->capacity)
     {
-        pString->capacity = (size_t)((double)(pString->capacity + 1) * 1.1);
+        pString->capacity = (pString->capacity + 1) << 1;
         pString->inner = realloc(pString->inner, pString->capacity);
     }
     pString->inner[pString->len++] = chr;
@@ -48,8 +48,7 @@ void appendStr(String* pString, const char* str)
     size_t strLen = strlen(str);
     if (pString->len + strLen + 1 >= pString->capacity)
     {
-        pString->capacity =
-            (size_t)((double)(pString->capacity + strLen + 1) * 1.1);
+        pString->capacity = (pString->capacity + strLen + 1) << 1;
         pString->inner = realloc(pString->inner, pString->capacity);
     }
     memcpy(pString->inner + pString->len, str, strLen);
@@ -61,8 +60,7 @@ void appendNStr(String* pString, const char* str, size_t strLen)
 {
     if (pString->len + strLen + 1 >= pString->capacity)
     {
-        pString->capacity =
-            (size_t)((double)(pString->capacity + strLen + 1) * 1.1);
+        pString->capacity = (pString->capacity + strLen + 1) << 1;
         pString->inner = realloc(pString->inner, pString->capacity);
     }
     memcpy(pString->inner + pString->len, str, strLen);
@@ -70,18 +68,24 @@ void appendNStr(String* pString, const char* str, size_t strLen)
     pString->len += strLen;
 }
 
-String concatString(String* pString1, String* pString2)
+String concatString(const String* pString1, const String* pString2)
 {
-    if (pString1->len + pString2->len + 1 >= pString1->capacity)
+    if (!pString1 || !pString2)
+        return EMPTY_STRING;
+
+    String string = *pString1;
+
+    if (string.len + pString2->len + 1 >= string.capacity)
     {
-        pString1->capacity =
-            (size_t)((double)(pString1->capacity + pString2->len + 1) * 1.1);
-        pString1->inner = realloc(pString1->inner, pString1->capacity);
+        string.capacity = (string.capacity + pString2->len + 1) << 1;
+        string.inner = realloc(string.inner, string.capacity);
     }
-    memcpy(pString1->inner + pString1->len, pString2->inner, pString2->len);
-    pString1->inner[pString1->len + pString2->len] = '\0';
-    pString1->len += pString2->len;
+    memcpy(string.inner + string.len, pString2->inner, pString2->len);
+    string.inner[string.len + pString2->len] = '\0';
+    string.len += pString2->len;
+
+    return string;
 }
 
-const char* getStr(String* pString) { return pString->inner; }
-size_t getLen(String* pString) { return pString->len; }
+const char* getStr(const String* pString) { return pString->inner; }
+size_t getLen(const String* pString) { return pString->len; }

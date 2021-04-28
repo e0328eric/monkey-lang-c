@@ -21,9 +21,9 @@ void appendChar(String*, char);
 void appendStr(String*, const char*);
 void appendNStr(String*, const char*, size_t);
 
-String concatString(String*, String*);
+String concatString(const String*, const String*);
 
-const char* getStr(String*);
-size_t getLen(String*);
+const char* getStr(const String*);
+size_t getLen(const String*);
 
 #endif //_MONKEY_LANG_SRC_DYNSTRING_H_
