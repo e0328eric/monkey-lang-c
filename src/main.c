@@ -1,8 +1,8 @@
-#include <stdio.h>
+#include "repl.h"
 
 int main(void)
 {
-    printf("Hello World!\n");
+    startREPL();
 
     return 0;
 }

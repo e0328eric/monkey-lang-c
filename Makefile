@@ -31,16 +31,16 @@ DEPS += $(TEST_OBJECTS:.o=.d)
 all: main
 
 $(OBJECTS): $(OBJ_DIR)/%.o : $(SRC_DIR)/%.c
-	$(CC) $(CFLAGS) $(INCLUDE) -c $^ -o $@ -MD $(LDFLAGS)
+	$(CC) $(CFLAGS) -c $^ -o $@ -MD $(LDFLAGS)
 
 $(OBJ_DIR)/main.o : $(SRC_DIR)/main.c
-	$(CC) $(CFLAGS) $(INCLUDE) -c $< -o $@ -MD $(LDFLAGS)
+	$(CC) $(CFLAGS) -c $< -o $@ -MD $(LDFLAGS)
 
 $(OBJ_DIR)/test_main.o : $(SRC_DIR)/test_main.c
-	$(CC) $(CFLAGS) $(INCLUDE) -c $< -o $@ -MD $(LDFLAGS)
+	$(CC) $(CFLAGS) -c $< -o $@ -MD $(LDFLAGS)
 
 main : $(RUN_OBJECTS)
-	$(CC) $(CFLAGS) $(RUN_OBJECTS) -o $(TARGET) $(LDFLAGS)
+	$(CC) $(CFLAGS) $(INCLUDE) $(RUN_OBJECTS) -o $(TARGET) $(LDFLAGS)
 
 test : $(TEST_OBJECTS)
 	$(CC) $(CFLAGS) $(TEST_OBJECTS) -o $(TEST_TARGET) $(LDFLAGS)
