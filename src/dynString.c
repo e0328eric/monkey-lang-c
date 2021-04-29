@@ -73,7 +73,11 @@ String concatString(const String* pString1, const String* pString2)
     if (!pString1 || !pString2)
         return EMPTY_STRING;
 
-    String string = *pString1;
+    String string = EMPTY_STRING;
+    string.capacity = pString1->capacity;
+    string.len = pString1->len;
+    string.inner = malloc(string.capacity);
+    memcpy(string.inner, pString1->inner, string.len);
 
     if (string.len + pString2->len + 1 >= string.capacity)
     {

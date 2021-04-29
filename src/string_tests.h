@@ -164,6 +164,10 @@ TEST(concatString)
         PRINT_ERR("String Length are different. expected = %zu, got = %zu",
                   strLen, string.len);
         freeString(&string);
+        freeString(&string_);
+        freeString(&string3);
+        freeString(&string2);
+        freeString(&string1);
         return TEST_FAILED;
     }
 
@@ -172,10 +176,18 @@ TEST(concatString)
         PRINT_ERR("Strings are different. expected = %s, got = %s", expected,
                   string.inner);
         freeString(&string);
+        freeString(&string_);
+        freeString(&string3);
+        freeString(&string2);
+        freeString(&string1);
         return TEST_FAILED;
     }
 
     freeString(&string);
+    freeString(&string_);
+    freeString(&string3);
+    freeString(&string2);
+    freeString(&string1);
     return TEST_SUCESSED;
 }
 
