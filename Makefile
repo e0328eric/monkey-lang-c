@@ -1,5 +1,6 @@
 CC = gcc
 CFLAGS = -std=c11 -O3 -Wall -Wextra -Wpedantic -Wconversion
+#CFLAGS += -ggdb
 INCLUDE = -lreadline
 
 SRC_DIR = ./src

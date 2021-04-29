@@ -91,5 +91,10 @@ String concatString(const String* pString1, const String* pString2)
     return string;
 }
 
+int cmpString(const String* pString1, const String* pString2)
+{
+    return strcmp(pString1->inner, pString2->inner);
+}
+
 const char* getStr(const String* pString) { return pString->inner; }
 size_t getLen(const String* pString) { return pString->len; }

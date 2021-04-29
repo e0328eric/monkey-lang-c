@@ -9,6 +9,7 @@ typedef enum
     T_EOF = 0,
     T_IDENT,
     T_INT,
+    T_ASSIGN,
     T_PLUS,
     T_MINUS,
     T_BANG,
@@ -43,5 +44,6 @@ Token mkToken(TokenType, const char*);
 void freeToken(Token*);
 
 TokenType lookupIdent(const char*);
+const char* printTokType(TokenType);
 
 #endif //_MONKEY_LANG_SRC_TOKEN_H_
