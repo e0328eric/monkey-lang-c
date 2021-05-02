@@ -3,36 +3,47 @@
 
 #include "dynString.h"
 
-String mkString(const char* str)
+struct String
 {
-    String string = EMPTY_STRING;
+    size_t capacity;
+    size_t len;
+    char* inner;
+};
+
+struct String* mkString(const char* str)
+{
+    struct String* string = malloc(sizeof(struct String));
     size_t strLen = strlen(str);
 
-    string.capacity = (strLen + 1) << 1;
-    string.len = strLen;
-    string.inner = malloc(string.capacity);
-    memcpy(string.inner, str, strLen);
-    string.inner[strLen] = '\0';
+    string->capacity = (strLen + 1) << 1;
+    string->len = strLen;
+    string->inner = malloc(string->capacity);
+    memcpy(string->inner, str, strLen);
+    string->inner[strLen] = '\0';
 
     return string;
 }
 
-String mkNString(const char* str, size_t strLen)
+struct String* mkNString(const char* str, size_t strLen)
 {
-    String string = (String){0, 0, NULL};
+    struct String* string = malloc(sizeof(struct String));
 
-    string.capacity = (strLen + 1) << 1;
-    string.len = strLen;
-    string.inner = malloc(string.capacity);
-    memcpy(string.inner, str, strLen);
-    string.inner[strLen] = '\0';
+    string->capacity = (strLen + 1) << 1;
+    string->len = strLen;
+    string->inner = malloc(string->capacity);
+    memcpy(string->inner, str, strLen);
+    string->inner[strLen] = '\0';
 
     return string;
 }
 
-void freeString(String* pString) { free(pString->inner); }
+void freeString(struct String* pString)
+{
+    free(pString->inner);
+    free(pString);
+}
 
-void appendChar(String* pString, char chr)
+void appendChar(struct String* pString, char chr)
 {
     if (pString->len + 1 >= pString->capacity)
     {
@@ -43,7 +54,7 @@ void appendChar(String* pString, char chr)
     pString->inner[pString->len] = '\0';
 }
 
-void appendStr(String* pString, const char* str)
+void appendStr(struct String* pString, const char* str)
 {
     size_t strLen = strlen(str);
     if (pString->len + strLen + 1 >= pString->capacity)
@@ -56,7 +67,7 @@ void appendStr(String* pString, const char* str)
     pString->len += strLen;
 }
 
-void appendNStr(String* pString, const char* str, size_t strLen)
+void appendNStr(struct String* pString, const char* str, size_t strLen)
 {
     if (pString->len + strLen + 1 >= pString->capacity)
     {
@@ -68,33 +79,27 @@ void appendNStr(String* pString, const char* str, size_t strLen)
     pString->len += strLen;
 }
 
-String concatString(const String* pString1, const String* pString2)
+void concatString(struct String* pString1, struct String* pString2)
 {
     if (!pString1 || !pString2)
-        return EMPTY_STRING;
+        return;
 
-    String string = EMPTY_STRING;
-    string.capacity = pString1->capacity;
-    string.len = pString1->len;
-    string.inner = malloc(string.capacity);
-    memcpy(string.inner, pString1->inner, string.len);
-
-    if (string.len + pString2->len + 1 >= string.capacity)
+    if (pString1->len + pString2->len + 1 >= pString1->capacity)
     {
-        string.capacity = (string.capacity + pString2->len + 1) << 1;
-        string.inner = realloc(string.inner, string.capacity);
+        pString1->capacity = (pString1->capacity + pString2->len + 1) << 1;
+        pString1->inner = realloc(pString1->inner, pString1->capacity);
     }
-    memcpy(string.inner + string.len, pString2->inner, pString2->len);
-    string.inner[string.len + pString2->len] = '\0';
-    string.len += pString2->len;
+    memcpy(pString1->inner + pString1->len, pString2->inner, pString2->len);
+    pString1->inner[pString1->len + pString2->len] = '\0';
+    pString1->len += pString2->len;
 
-    return string;
+    freeString(pString2);
 }
 
-int cmpString(const String* pString1, const String* pString2)
+int cmpString(const struct String* pString1, const struct String* pString2)
 {
     return strcmp(pString1->inner, pString2->inner);
 }
 
-const char* getStr(const String* pString) { return pString->inner; }
-size_t getLen(const String* pString) { return pString->len; }
+const char* getStr(const struct String* pString) { return pString->inner; }
+size_t getLen(const struct String* pString) { return pString->len; }

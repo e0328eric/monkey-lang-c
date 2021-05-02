@@ -5,11 +5,15 @@
 
 Token mkToken(TokenType type, const char* str)
 {
-    String literal = mkString(str);
+    String* literal = mkString(str);
     return (Token){type, literal};
 }
 
-void freeToken(Token* pTok) { freeString(&pTok->literal); }
+void freeToken(Token* pTok)
+{
+    freeString(pTok->literal);
+    pTok->literal = NULL;
+}
 
 TokenType lookupIdent(const char* str)
 {

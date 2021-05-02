@@ -11,6 +11,7 @@ TEST_TARGET = monkey_test
 
 SRCS := $(notdir $(wildcard $(SRC_DIR)/*.c))
 SRCS := $(filter-out test_main.c, $(SRCS))
+SRCS := $(filter-out repl.c, $(SRCS))
 SRCS := $(filter-out main.c, $(SRCS))
 OBJS = $(SRCS:.c=.o)
 OBJECTS = $(patsubst %.o,$(OBJ_DIR)/%.o,$(OBJS))
@@ -21,6 +22,7 @@ RUN_OBJS = $(RUN_SRCS:.c=.o)
 RUN_OBJECTS = $(patsubst %.o,$(OBJ_DIR)/%.o,$(RUN_OBJS))
 
 TEST_SRCS := $(notdir $(wildcard $(SRC_DIR)/*.c))
+TEST_SRCS := $(filter-out repl.c, $(TEST_SRCS))
 TEST_SRCS := $(filter-out main.c, $(TEST_SRCS))
 TEST_OBJS = $(TEST_SRCS:.c=.o)
 TEST_OBJECTS = $(patsubst %.o,$(OBJ_DIR)/%.o,$(TEST_OBJS))

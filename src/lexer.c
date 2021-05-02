@@ -7,8 +7,8 @@
 void readChar(Lexer*);
 char peekChar(const Lexer*);
 void skipWhitespace(Lexer*);
-String readIdentifier(Lexer*);
-String readNumber(Lexer*);
+String* readIdentifier(Lexer*);
+String* readNumber(Lexer*);
 int isLetter(char);
 int isDigit(char);
 
@@ -110,7 +110,7 @@ Token nextToken(Lexer* l)
         if (isLetter(l->ch))
         {
             tok.literal = readIdentifier(l);
-            tok.type = lookupIdent(tok.literal.inner);
+            tok.type = lookupIdent(getStr(tok.literal));
             return tok;
         }
         if (isDigit(l->ch))
@@ -120,7 +120,7 @@ Token nextToken(Lexer* l)
             return tok;
         }
         TOKENIZE2(T_ILLEGAL, "");
-        appendChar(&tok.literal, l->ch);
+        appendChar(tok.literal, l->ch);
         break;
     }
 
@@ -128,7 +128,7 @@ Token nextToken(Lexer* l)
     return tok;
 }
 
-String readIdentifier(Lexer* l)
+String* readIdentifier(Lexer* l)
 {
     int position = l->position;
     while (isLetter(l->ch))
@@ -137,7 +137,7 @@ String readIdentifier(Lexer* l)
     return mkNString(l->input + position, (size_t)(l->position - position));
 }
 
-String readNumber(Lexer* l)
+String* readNumber(Lexer* l)
 {
     int position = l->position;
     while (isDigit(l->ch))

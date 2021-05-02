@@ -10,36 +10,36 @@
     }
 #define T_ENDTEST (-2)
 
-#define TEST_LEXER                                                        \
-    Lexer* l = mkLexer(input);                                            \
-                                                                          \
-    for (int i = 0; tests[i].expectedType != -2; ++i)                     \
-    {                                                                     \
-        tok = nextToken(l);                                               \
-        if (tok.type != tests[i].expectedType)                            \
-        {                                                                 \
-            PRINT_ERR("TokenType wrong. expected = %s, got = %s",         \
-                      printTokType(tests[i].expectedType),                \
-                      printTokType(tok.type));                            \
-            isTestPassed = TEST_FAILED;                                   \
-            goto FREE_AND_EXIT;                                           \
-        }                                                                 \
-                                                                          \
-        if (cmpString(&tests[i].expectedLiteral, &tok.literal) != 0)      \
-        {                                                                 \
-            PRINT_ERR("TokenLiteral wrong. expected = %s, got = %s",      \
-                      tests[i].expectedLiteral.inner, tok.literal.inner); \
-            isTestPassed = TEST_FAILED;                                   \
-            goto FREE_AND_EXIT;                                           \
-        }                                                                 \
-                                                                          \
-        freeToken(&tok);                                                  \
-    }                                                                     \
-                                                                          \
-    FREE_AND_EXIT:                                                        \
-    if (!isTestPassed)                                                    \
-        freeToken(&tok);                                                  \
-    freeLexer(l);                                                         \
+#define TEST_LEXER                                                            \
+    Lexer* l = mkLexer(input);                                                \
+                                                                              \
+    for (int i = 0; tests[i].expectedType != -2; ++i)                         \
+    {                                                                         \
+        tok = nextToken(l);                                                   \
+        if (tok.type != tests[i].expectedType)                                \
+        {                                                                     \
+            PRINT_ERR("TokenType wrong. expected = %s, got = %s",             \
+                      printTokType(tests[i].expectedType),                    \
+                      printTokType(tok.type));                                \
+            isTestPassed = TEST_FAILED;                                       \
+            goto FREE_AND_EXIT;                                               \
+        }                                                                     \
+                                                                              \
+        if (cmpString(tests[i].expectedLiteral, tok.literal) != 0)            \
+        {                                                                     \
+            PRINT_ERR("TokenLiteral wrong. expected = %s, got = %s",          \
+                      getStr(tests[i].expectedLiteral), getStr(tok.literal)); \
+            isTestPassed = TEST_FAILED;                                       \
+            goto FREE_AND_EXIT;                                               \
+        }                                                                     \
+                                                                              \
+        freeToken(&tok);                                                      \
+    }                                                                         \
+                                                                              \
+    FREE_AND_EXIT:                                                            \
+    if (!isTestPassed)                                                        \
+        freeToken(&tok);                                                      \
+    freeLexer(l);                                                             \
     return isTestPassed
 
 TEST(TestNextToken)
@@ -51,7 +51,7 @@ TEST(TestNextToken)
     struct
     {
         TokenType expectedType;
-        String expectedLiteral;
+        String* expectedLiteral;
     } tests[] = {
         TOKEN(T_ASSIGN, "="), TOKEN(T_PLUS, "+"),      TOKEN(T_LPAREN, "("),
         TOKEN(T_RPAREN, ")"), TOKEN(T_LBRACE, "{"),    TOKEN(T_RBRACE, "}"),
@@ -85,7 +85,7 @@ TEST(TestComplexLexing)
     struct
     {
         TokenType expectedType;
-        String expectedLiteral;
+        String* expectedLiteral;
     } tests[] = {
         TOKEN(T_LET, "let"),     TOKEN(T_IDENT, "five"),
         TOKEN(T_ASSIGN, "="),    TOKEN(T_INT, "5"),

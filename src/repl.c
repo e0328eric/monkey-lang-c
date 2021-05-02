@@ -13,7 +13,7 @@ void startREPL(void)
 {
     char* line = (char*)NULL;
     Lexer* l = (Lexer*)NULL;
-    Token tok = (Token){.type = -2, .literal = (String){0, 0, NULL}};
+    Token tok = (Token){.type = -2, .literal = NULL};
 
     using_history();
 
@@ -33,7 +33,8 @@ void startREPL(void)
         do
         {
             tok = nextToken(l);
-            printf("{ %s : %s }\n", printTokType(tok.type), tok.literal.inner);
+            printf("{ %s : %s }\n", printTokType(tok.type),
+                   getStr(tok.literal));
             freeToken(&tok);
         } while (tok.type != T_EOF);
 

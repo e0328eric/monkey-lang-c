@@ -37,7 +37,7 @@ typedef enum
 typedef struct
 {
     TokenType type;
-    String literal;
+    String* literal;
 } Token;
 
 Token mkToken(TokenType, const char*);
