@@ -1,8 +1,8 @@
-cmake_minimum_required(VERSION 3.19)
+cmake_minimum_required(VERSION 3.17)
 project(monkey)
 
 set(CMAKE_CXX_STANDARD 20)
-add_compile_options(-Wall -Wextra -Wpedantic -Wconversion)
+add_compile_options(-Wall -Wextra -Wpedantic -Wconversion -ggdb)
 
 include_directories(src)
 

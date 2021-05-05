@@ -25,10 +25,31 @@ enum class Precedence
     Call,
 };
 
+enum class AstType
+{
+    // Statements
+    Program,
+    LetStatement,
+    ReturnStatement,
+    ExpressionStatement,
+    BlockStmt,
+
+    // Expressions
+    Identifier,
+    IntegerLiteral,
+    Boolean,
+    PrefixExpr,
+    InfixExpr,
+    IfExpr,
+    FunctionLiteral,
+    CallExpr,
+};
+
 /*  Signature of Main Classes  */
 class INode
 {
   public:
+    virtual AstType Type() const = 0;
     virtual std::string String() const = 0;
     virtual ~INode() = default;
 };
@@ -36,6 +57,7 @@ class INode
 class IStatement : public INode
 {
   public:
+    AstType Type() const override = 0;
     std::string String() const override = 0;
     ~IStatement() override = default;
 };
@@ -43,6 +65,7 @@ class IStatement : public INode
 class IExpression : public INode
 {
   public:
+    AstType Type() const override = 0;
     std::string String() const override = 0;
     ~IExpression() override = default;
 };
@@ -51,6 +74,7 @@ class IExpression : public INode
 class Program final : public IStatement
 {
   public:
+    AstType Type() const override;
     std::string String() const override;
 
     Program();
@@ -66,6 +90,7 @@ class Program final : public IStatement
 class LetStatement final : public IStatement
 {
   public:
+    AstType Type() const override;
     std::string String() const override;
 
     // LetStatement owns both an identifier and an expression
@@ -85,6 +110,7 @@ class LetStatement final : public IStatement
 class ReturnStatement final : public IStatement
 {
   public:
+    AstType Type() const override;
     std::string String() const override;
 
     ReturnStatement();
@@ -100,6 +126,7 @@ class ReturnStatement final : public IStatement
 class ExpressionStatement final : public IStatement
 {
   public:
+    AstType Type() const override;
     std::string String() const override;
 
     ExpressionStatement();
@@ -115,6 +142,7 @@ class ExpressionStatement final : public IStatement
 class BlockStmt final : public IStatement
 {
   public:
+    AstType Type() const override;
     std::string String() const override;
 
     BlockStmt();
@@ -131,6 +159,7 @@ class BlockStmt final : public IStatement
 class Identifier final : public IExpression
 {
   public:
+    AstType Type() const override;
     std::string String() const override;
 
     Identifier(std::string value);
@@ -145,6 +174,7 @@ class Identifier final : public IExpression
 class IntegerLiteral final : public IExpression
 {
   public:
+    AstType Type() const override;
     std::string String() const override;
 
     IntegerLiteral(int64_t value);
@@ -160,6 +190,7 @@ class IntegerLiteral final : public IExpression
 class Boolean final : public IExpression
 {
   public:
+    AstType Type() const override;
     std::string String() const override;
 
     Boolean(bool value);
@@ -175,6 +206,7 @@ class Boolean final : public IExpression
 class PrefixExpr final : public IExpression
 {
   public:
+    AstType Type() const override;
     std::string String() const override;
 
     PrefixExpr(std::string op, IExpression*& expr);
@@ -191,6 +223,7 @@ class PrefixExpr final : public IExpression
 class InfixExpr final : public IExpression
 {
   public:
+    AstType Type() const override;
     std::string String() const override;
 
     InfixExpr(std::string op, IExpression*& left, IExpression*& right);
@@ -209,6 +242,7 @@ class InfixExpr final : public IExpression
 class IfExpr final : public IExpression
 {
   public:
+    AstType Type() const override;
     std::string String() const override;
 
     IfExpr(IExpression*& condition, BlockStmt*& conseq, BlockStmt*& alter);
@@ -227,6 +261,7 @@ class IfExpr final : public IExpression
 class FunctionLiteral final : public IExpression
 {
   public:
+    AstType Type() const override;
     std::string String() const override;
 
     FunctionLiteral();
@@ -245,6 +280,7 @@ class FunctionLiteral final : public IExpression
 class CallExpr final : public IExpression
 {
   public:
+    AstType Type() const override;
     std::string String() const override;
 
     explicit CallExpr(IExpression*& function);

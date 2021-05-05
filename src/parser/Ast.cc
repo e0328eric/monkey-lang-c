@@ -1,3 +1,4 @@
+#include <cstdio>
 #include <utility>
 
 #include "Ast.hh"
@@ -13,6 +14,8 @@
 using namespace parser;
 
 /*  Program  */
+AstType Program::Type() const { return AstType::Program; }
+
 std::string Program::String() const
 {
     std::string out{};
@@ -47,6 +50,8 @@ const std::vector<IStatement*>& Program::GetStatements() const
 }
 
 /*  LetStatement  */
+AstType LetStatement::Type() const { return AstType::LetStatement; }
+
 std::string LetStatement::String() const
 {
     ASSERT(mName && mValue);
@@ -85,6 +90,8 @@ void LetStatement::SetValue(IExpression*&& value)
 }
 
 /*  ReturnStatement  */
+AstType ReturnStatement::Type() const { return AstType::ReturnStatement; }
+
 std::string ReturnStatement::String() const
 {
     ASSERT(mReturnValue);
@@ -112,6 +119,11 @@ void ReturnStatement::SetReturnValue(IExpression*&& expr)
 }
 
 /*  ExpressionStatement  */
+AstType ExpressionStatement::Type() const
+{
+    return AstType::ExpressionStatement;
+}
+
 std::string ExpressionStatement::String() const
 {
     if (mExpression)
@@ -135,6 +147,8 @@ void ExpressionStatement::SetExpression(IExpression*&& expr)
 }
 
 /*  BlockStmt  */
+AstType BlockStmt::Type() const { return AstType::BlockStmt; }
+
 std::string BlockStmt::String() const
 {
     std::string output{};
@@ -169,6 +183,8 @@ const std::vector<IStatement*>& BlockStmt::GetStatements() const
 }
 
 /*  Identifier  */
+AstType Identifier::Type() const { return AstType::Identifier; }
+
 std::string Identifier::String() const { return mValue; }
 
 Identifier::Identifier(std::string value) : IExpression(), mValue(value) {}
@@ -176,6 +192,8 @@ Identifier::Identifier(std::string value) : IExpression(), mValue(value) {}
 const std::string& Identifier::GetValue() const { return mValue; }
 
 /*  IntegerLiteral  */
+AstType IntegerLiteral::Type() const { return AstType::IntegerLiteral; }
+
 std::string IntegerLiteral::String() const { return std::to_string(mValue); }
 
 IntegerLiteral::IntegerLiteral(int64_t value) : IExpression(), mValue(value) {}
@@ -185,6 +203,8 @@ const int64_t& IntegerLiteral::GetValue() const { return mValue; }
 void IntegerLiteral::SetValue(int64_t n) { mValue = n; }
 
 /*  Boolean  */
+AstType Boolean::Type() const { return AstType::Boolean; }
+
 std::string Boolean::String() const { return mValue ? "true" : "false"; }
 
 Boolean::Boolean(bool value) : IExpression(), mValue(value) {}
@@ -194,6 +214,8 @@ const bool& Boolean::GetValue() const { return mValue; }
 void Boolean::SetValue(bool& value) { mValue = value; }
 
 /*  PrefixExpr  */
+AstType PrefixExpr::Type() const { return AstType::PrefixExpr; }
+
 std::string PrefixExpr::String() const
 {
     ASSERT(mRight);
@@ -214,6 +236,8 @@ const std::string& PrefixExpr::GetOperator() const { return mOperator; }
 const IExpression* PrefixExpr::GetRight() const { return mRight; }
 
 /*  InfixExpr  */
+AstType InfixExpr::Type() const { return AstType::InfixExpr; }
+
 std::string InfixExpr::String() const
 {
     ASSERT(mLeft && mRight);
@@ -240,6 +264,8 @@ const IExpression* InfixExpr::GetLeft() const { return mLeft; }
 const IExpression* InfixExpr::GetRight() const { return mRight; }
 
 /*  IfExpr  */
+AstType IfExpr::Type() const { return AstType::IfExpr; }
+
 std::string IfExpr::String() const
 {
     std::string output;
@@ -272,6 +298,8 @@ const BlockStmt* IfExpr::GetConsequence() const { return mConsequence; }
 const BlockStmt* IfExpr::GetAlternative() const { return mAlternative; }
 
 /*  FunctionLiteral  */
+AstType FunctionLiteral::Type() const { return AstType::FunctionLiteral; }
+
 std::string FunctionLiteral::String() const
 {
     ASSERT(mBody);
@@ -320,6 +348,8 @@ void FunctionLiteral::SetBody(BlockStmt*&& body)
 }
 
 /*  CallExpr  */
+AstType CallExpr::Type() const { return AstType::CallExpr; }
+
 std::string CallExpr::String() const
 {
     std::string output;

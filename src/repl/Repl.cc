@@ -12,14 +12,14 @@
 
 void Repl(std::ostream& output)
 {
-    char* line = (char*)NULL;
+    char* line = nullptr;
+    parser::Program* program = nullptr;
+
     using_history();
 
     while (true)
     {
         line = readline(PROMPT);
-        output << PROMPT;
-
         if (!line || strcmp(line, ":quit") == 0)
         {
             free(line);
@@ -30,18 +30,22 @@ void Repl(std::ostream& output)
 
         lexer::Lexer l{line};
         parser::Parser p{l};
-        auto program = p.ParseProgram();
+        program = p.ParseProgram();
 
         if (!p.Errors().empty())
         {
             printParseErrors(output, p.Errors());
+            delete program;
             free(line);
+            line = nullptr;
             continue;
         }
 
         output << program->String() << std::endl;
 
+        delete program;
         free(line);
+        line = nullptr;
     }
 }
 

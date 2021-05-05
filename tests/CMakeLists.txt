@@ -7,7 +7,7 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(googletest)
 
-set(BINARY ${CMAKE_PROJECT_NAME}_tst)
+set(BINARY ${CMAKE_PROJECT_NAME}_test)
 
 file(GLOB_RECURSE TEST_SOURCES LIST_DIRECTORIES false *.hh *.cc)
 
