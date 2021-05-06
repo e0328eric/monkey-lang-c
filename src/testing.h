@@ -12,6 +12,8 @@
 #define SUCESSED_COLOR "\x1b[1m\x1b[92m"
 #define RESET_COLOR    "\x1b[0m"
 
+#define TEST_ROW_SIZE 83
+
 #ifndef MAIN_TEST_NAME
 #define MAIN_TEST_NAME
 #endif
@@ -31,17 +33,17 @@
 
 #define RUN_MAIN_TEST(mainName)                                             \
     {                                                                       \
-        for (int i = 0; i < 76; ++i)                                        \
+        for (int i = 0; i < TEST_ROW_SIZE; ++i)                             \
             printf("=");                                                    \
         printf("\n");                                                       \
         const char* __title = "< Testing `" #mainName "`>";                 \
         size_t __titleLen = strlen(__title);                                \
-        size_t __padding = (76 - __titleLen) / 2;                           \
+        size_t __padding = (TEST_ROW_SIZE - __titleLen) / 2;                \
         __padding = __padding <= 0 ? 0 : __padding;                         \
         for (size_t i = 0; i < __padding; ++i)                              \
             printf(" ");                                                    \
         printf("%s", __title);                                              \
-        for (size_t i = __titleLen; i < 76; ++i)                            \
+        for (size_t i = __titleLen; i < TEST_ROW_SIZE; ++i)                 \
             printf(" ");                                                    \
         printf("\n\n");                                                     \
         if (mainName() == TEST_FAILED)                                      \
@@ -50,7 +52,7 @@
         else                                                                \
             printf(SUCESSED_COLOR "[" #mainName "]  "                       \
                                   "  All tests are passed!\n" RESET_COLOR); \
-        for (int i = 0; i < 76; ++i)                                        \
+        for (int i = 0; i < TEST_ROW_SIZE; ++i)                             \
             printf("=");                                                    \
         printf("\n\n");                                                     \
     }

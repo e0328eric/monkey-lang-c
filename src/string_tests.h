@@ -1,7 +1,7 @@
 #define MAIN_TEST_NAME TestDynString
 
 #include "dynString.h"
-#include "tests.h"
+#include "testing.h"
 
 TEST(mkString)
 {
@@ -164,6 +164,8 @@ TEST(concatString)
         PRINT_ERR("String Length are different. expected = %zu, got = %zu",
                   strLen, getLen(string));
         freeString(string);
+        freeString(string2);
+        freeString(string3);
         return TEST_FAILED;
     }
 
@@ -172,10 +174,14 @@ TEST(concatString)
         PRINT_ERR("Strings are different. expected = %s, got = %s", expected,
                   getStr(string));
         freeString(string);
+        freeString(string2);
+        freeString(string3);
         return TEST_FAILED;
     }
 
     freeString(string);
+    freeString(string2);
+    freeString(string3);
     return TEST_SUCESSED;
 }
 

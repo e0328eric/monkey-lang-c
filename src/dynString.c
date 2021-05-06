@@ -92,7 +92,11 @@ void concatString(struct String* pString1, struct String* pString2)
     memcpy(pString1->inner + pString1->len, pString2->inner, pString2->len);
     pString1->inner[pString1->len + pString2->len] = '\0';
     pString1->len += pString2->len;
+}
 
+void concatFreeString(struct String* pString1, struct String* pString2)
+{
+    concatString(pString1, pString2);
     freeString(pString2);
 }
 

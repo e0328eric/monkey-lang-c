@@ -1,7 +1,7 @@
 #define MAIN_TEST_NAME TestLexer
 
 #include "lexer.h"
-#include "tests.h"
+#include "testing.h"
 #include "token.h"
 
 #define TOKEN(tokType, literal)    \
@@ -40,6 +40,10 @@
     if (!isTestPassed)                                                        \
         freeToken(&tok);                                                      \
     freeLexer(l);                                                             \
+    int i;                                                                    \
+    for (i = 0; tests[i].expectedType != -2; ++i)                             \
+        freeString(tests[i].expectedLiteral);                                 \
+    freeString(tests[i].expectedLiteral);                                     \
     return isTestPassed
 
 TEST(TestNextToken)

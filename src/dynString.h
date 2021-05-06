@@ -14,8 +14,8 @@ void appendChar(String*, char);
 void appendStr(String*, const char*);
 void appendNStr(String*, const char*, size_t);
 
-// Concat two string into first one and free the second one
 void concatString(String*, String*);
+void concatFreeString(String*, String*);
 int cmpString(const String*, const String*);
 
 const char* getStr(const String*);
