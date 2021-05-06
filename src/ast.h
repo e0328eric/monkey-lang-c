@@ -1,6 +1,8 @@
 #ifndef _MONKEY_LANG_SRC_AST_H_
 #define _MONKEY_LANG_SRC_AST_H_
 
+#include <ctype.h>
+
 typedef enum
 {
     EMPTY_NODE = 0,
@@ -34,9 +36,25 @@ typedef struct ExprStmt ExprStmt;
 
 typedef struct IdentExpr IdentExpr;
 
+Node* mkNode(void);
 Program* mkProgram(void);
+Stmt* mkStmt(void);
+Expr* mkExpr(void);
+LetStmt* mkLetStmt(void);
+ReturnStmt* mkReturnStmt(void);
+ExprStmt* mkExprStmt(void);
+IdentExpr* mkIdentExpr(void);
+
+void freeNode(Node*);
 void freeProgram(Program*);
-void pushStmt(Program*, Stmt*);
+void freeStmt(Stmt*);
+void freeExpr(Expr*);
+void freeLetStmt(LetStmt*);
+void freeReturnStmt(ReturnStmt*);
+void freeExprStmt(ExprStmt*);
+void freeIdentExpr(IdentExpr*);
+
+void pushStmt(Program*, Stmt**);
 Stmt* popStmt(Program*);
 
 /////////////////////////////////////////////
@@ -68,6 +86,7 @@ struct Program
 {
     struct ProgNode* head;
     struct ProgNode* tail;
+    size_t len;
 };
 
 struct Stmt
