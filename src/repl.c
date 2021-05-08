@@ -1,6 +1,8 @@
+#include <stdio.h>
+
+#ifdef __clang__
 #include <readline/history.h>
 #include <readline/readline.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -8,14 +10,16 @@
 #include "repl.h"
 
 #define PROMPT ">> "
+#endif
 
 void startREPL(void)
 {
-    char* line = (char*)NULL;
-    Lexer* l = (Lexer*)NULL;
-    Token tok = (Token){.type = -2, .literal = NULL};
-
+#ifdef __clang__
     using_history();
+
+    char* line = NULL;
+    Lexer* l = NULL;
+    Token tok = (Token){-2, NULL};
 
     while (1)
     {
@@ -41,4 +45,8 @@ void startREPL(void)
         freeLexer(l);
         free(line);
     }
+#else
+    printf("ERROR: Compile this with clang compiler.\n"
+           "because gcc cause an error linking readline library.\n");
+#endif
 }

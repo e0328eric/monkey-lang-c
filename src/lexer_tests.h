@@ -8,7 +8,7 @@
     {                              \
         tokType, mkString(literal) \
     }
-#define T_ENDTEST (-2)
+#define T_ENDTEST ((TokenType)(-2))
 
 #define TEST_LEXER                                                            \
     Lexer* l = mkLexer(input);                                                \

@@ -1,3 +1,6 @@
+#include <stdlib.h>
+
+#include "ast_tests.h"
 #include "lexer_tests.h"
 #include "string_tests.h"
 
@@ -8,6 +11,7 @@ int main(void)
 {
     RUN_MAIN_TEST(TestDynString);
     RUN_MAIN_TEST(TestLexer);
+    RUN_MAIN_TEST(TestAst);
 
     return 0;
 }

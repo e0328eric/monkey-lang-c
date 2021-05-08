@@ -1,7 +1,9 @@
-CC = gcc
+CC = clang
 CFLAGS = -std=c11 -O3 -Wall -Wextra -Wpedantic -Wconversion
-# CFLAGS += -ggdb
+# For Debugging
+CFLAGS += -ggdb -fsanitize=leak -static-libsan
 INCLUDE = -lreadline
+LDFLAGS =
 
 SRC_DIR = ./src
 OBJ_DIR = ./obj
@@ -36,6 +38,9 @@ $(OBJECTS): $(OBJ_DIR)/%.o : $(SRC_DIR)/%.c
 	$(CC) $(CFLAGS) -c $^ -o $@ -MD $(LDFLAGS)
 
 $(OBJ_DIR)/main.o : $(SRC_DIR)/main.c
+	$(CC) $(CFLAGS) -c $< -o $@ -MD $(LDFLAGS)
+
+$(OBJ_DIR)/repl.o : $(SRC_DIR)/repl.c
 	$(CC) $(CFLAGS) -c $< -o $@ -MD $(LDFLAGS)
 
 $(OBJ_DIR)/test_main.o : $(SRC_DIR)/test_main.c

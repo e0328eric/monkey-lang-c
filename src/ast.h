@@ -7,8 +7,8 @@ typedef enum
 {
     EMPTY_NODE = 0,
     NODE_PROGRAM,
-    NODE_STATEMENT,
-    NODE_EXPRESSION,
+    NODE_STMT,
+    NODE_EXPR,
 } NodeType;
 
 typedef enum
@@ -57,9 +57,7 @@ void freeIdentExpr(IdentExpr*);
 void pushStmt(Program*, Stmt**);
 Stmt* popStmt(Program*);
 
-/////////////////////////////////////////////
-//// Implementation of AST structs //////////
-/////////////////////////////////////////////
+/* Implementation of AST structs */
 
 struct Stmt;
 struct Expr;
@@ -69,9 +67,10 @@ struct Node
     NodeType type;
     union
     {
+        int ignore; // To make it zero initizlize
         Program* program;
         Stmt* stmt;
-        Expr* expt;
+        Expr* expr;
     } inner;
 };
 
@@ -94,6 +93,7 @@ struct Stmt
     StmtType type;
     union
     {
+        int ignore; // To make it zero initizlize
         LetStmt* letStmt;
         ReturnStmt* returnStmt;
         ExprStmt* exprStmt;
@@ -105,6 +105,7 @@ struct Expr
     ExprType type;
     union
     {
+        int ignore; // To make it zero initizlize
         IdentExpr* identExpr;
     } inner;
 };
