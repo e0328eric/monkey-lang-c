@@ -41,6 +41,8 @@ const char* printTokType(TokenType tokType)
 {
     switch (tokType)
     {
+    case T_ZERO:
+        return "EMPTY_TOKEN";
     case T_ILLEGAL:
         return "ILLEGAL";
     case T_EOF:

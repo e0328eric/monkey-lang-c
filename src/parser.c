@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <stdlib.h>
 
 #define __PRIVATE_PARSER_FUNCTIONS__
@@ -6,17 +7,28 @@
 #define FALSE 0
 #define TRUE  1
 
+#define EXPECT_PEEK(nodeName, tokType, destructor) \
+    if (!expectPeek(p, tokType))                   \
+    {                                              \
+        destructor(nodeName);                      \
+        return NULL;                               \
+    }
+
 struct Parser
 {
     Lexer* l;
     Token curToken;
     Token peekToken;
+    String** errors;
+    int errLen;
 };
 
 Parser* mkParser(Lexer* l)
 {
     Parser* output = malloc(sizeof(Parser));
     output->l = l;
+    output->errors = NULL;
+    output->errLen = 0;
 
     takeToken(output);
     takeToken(output);
@@ -29,10 +41,42 @@ void freeParser(Parser* p)
     if (!p)
         return;
 
+    if (p->errors)
+    {
+        for (int i = 0; i < MAXIMUM_ERR_MSGS; ++i)
+            freeString(p->errors[i]);
+        free(p->errors);
+    }
+
     freeToken(&p->curToken);
     freeToken(&p->peekToken);
     freeLexer(p->l);
     free(p);
+}
+
+String** getErrors(Parser* p)
+{
+    String** output = p->errors;
+    p->errors = NULL;
+    p->errLen = 0;
+    return output;
+}
+
+void peekError(Parser* p, TokenType tokType)
+{
+    char msg[60];
+    if (p->errLen >= MAXIMUM_ERR_MSGS)
+    {
+        fprintf(stderr, "too many parse error occurs.");
+        return;
+    }
+    sprintf(msg, "expected next token to be %s, got %s instead",
+            printTokType(tokType), printTokType(p->peekToken.type));
+    p->errors = p->errors ? realloc(p->errors,
+                                    sizeof(String*) * (size_t)(p->errLen + 1))
+                          : malloc(sizeof(String*));
+    p->errors[p->errLen++] = mkString(msg);
+    p->errors[p->errLen] = NULL;
 }
 
 void takeToken(Parser* p)
@@ -59,6 +103,7 @@ int expectPeek(Parser* p, TokenType tokType)
         takeToken(p);
         return TRUE;
     }
+    peekError(p, tokType);
     return FALSE;
 }
 
@@ -107,13 +152,9 @@ LetStmt* parseLetStmt(Parser* p)
 {
     LetStmt* letStmt = mkLetStmt();
 
-    if (!expectPeek(p, T_IDENT))
-        return NULL;
-
+    EXPECT_PEEK(letStmt, T_IDENT, freeLetStmt);
     concatString(letStmt->name->value, p->curToken.literal);
-
-    if (!expectPeek(p, T_ASSIGN))
-        return NULL;
+    EXPECT_PEEK(letStmt, T_ASSIGN, freeLetStmt);
 
     // TODO: We're skipping the expressions until we
     // encounter a semicolon

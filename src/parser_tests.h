@@ -10,6 +10,18 @@
     Lexer* l = mkLexer(input);                                         \
     Parser* p = mkParser(l);                                           \
     Program* program = parseProgram(p);                                \
+    String** errors = getErrors(p);                                    \
+    if (errors)                                                        \
+    {                                                                  \
+        for (int i = 0; errors[i]; ++i)                                \
+        {                                                              \
+            PRINT_ERR("%s", getStr(errors[i]));                        \
+            freeString(errors[i]);                                     \
+        }                                                              \
+        free(errors);                                                  \
+        testStatus = TEST_FAILED;                                      \
+        goto EXIT_IF_FAILED;                                           \
+    }                                                                  \
     if (!program)                                                      \
     {                                                                  \
         PRINT_ERR("parseProgram(p) returns NULL", NULL);               \
