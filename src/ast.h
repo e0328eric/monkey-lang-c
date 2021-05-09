@@ -7,14 +7,6 @@
 
 typedef enum
 {
-    EMPTY_NODE = 0,
-    NODE_PROGRAM,
-    NODE_STMT,
-    NODE_EXPR,
-} NodeType;
-
-typedef enum
-{
     EMPTY_STMT = 0,
     STMT_LET,
     STMT_RETURN,
@@ -27,7 +19,6 @@ typedef enum
     EXPR_IDENT,
 } ExprType;
 
-typedef struct Node Node;
 typedef struct Program Program;
 typedef struct Stmt Stmt;
 typedef struct Expr Expr;
@@ -38,7 +29,6 @@ typedef struct ExprStmt ExprStmt;
 
 typedef struct IdentExpr IdentExpr;
 
-Node* mkNode(void);
 Program* mkProgram(void);
 Stmt* mkStmt(void);
 Expr* mkExpr(void);
@@ -47,7 +37,6 @@ ReturnStmt* mkReturnStmt(void);
 ExprStmt* mkExprStmt(void);
 IdentExpr* mkIdentExpr(void);
 
-void freeNode(Node*);
 void freeProgram(Program*);
 void freeStmt(Stmt*);
 void freeExpr(Expr*);
@@ -56,6 +45,14 @@ void freeReturnStmt(ReturnStmt*);
 void freeExprStmt(ExprStmt*);
 void freeIdentExpr(IdentExpr*);
 
+String* stringifyProgram(Program*);
+String* stringifyStmt(Stmt*);
+String* stringifyExpr(Expr*);
+String* stringifyLetStmt(LetStmt*);
+String* stringifyReturnStmt(ReturnStmt*);
+String* stringifyExprStmt(ExprStmt*);
+String* stringifyIdentExpr(IdentExpr*);
+
 void pushStmt(Program*, Stmt**);
 Stmt* popStmt(Program*);
 
@@ -63,18 +60,6 @@ Stmt* popStmt(Program*);
 
 struct Stmt;
 struct Expr;
-
-struct Node
-{
-    NodeType type;
-    union
-    {
-        int checkIsNull; // To make it zero initizlize
-        Program* program;
-        Stmt* stmt;
-        Expr* expr;
-    } inner;
-};
 
 struct ProgNode
 {

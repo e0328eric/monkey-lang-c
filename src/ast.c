@@ -2,22 +2,13 @@
 #include <stdlib.h>
 
 #include "ast.h"
+#include "dynString.h"
 
 #define UNDEFINED_OBJECT_FOUND(type)                           \
     fprintf(stderr, "Undefined" type "found. Exit Program\n"); \
     exit(1)
 
 /* Implementig Constructors */
-Node* mkNode(void)
-{
-    Node* output = malloc(sizeof(Node));
-
-    output->type = EMPTY_NODE;
-    output->inner.checkIsNull = 0;
-
-    return output;
-}
-
 Program* mkProgram(void)
 {
     Program* output = malloc(sizeof(Program));
@@ -89,39 +80,11 @@ ExprStmt* mkExprStmt(void)
 IdentExpr* mkIdentExpr(void)
 {
     IdentExpr* output = malloc(sizeof(IdentExpr));
-
-    output->value = mkString("");
-
+    output->value = NULL;
     return output;
 }
 
 /* Implementing Destructors */
-void freeNode(Node* pNode)
-{
-    if (!pNode)
-        return;
-
-    switch (pNode->type)
-    {
-    case NODE_PROGRAM:
-        freeProgram(pNode->inner.program);
-        break;
-    case NODE_STMT:
-        freeStmt(pNode->inner.stmt);
-        break;
-    case NODE_EXPR:
-        freeExpr(pNode->inner.expr);
-        break;
-    case EMPTY_NODE:
-        break;
-    default:
-        UNDEFINED_OBJECT_FOUND("Node");
-        break;
-    }
-
-    free(pNode);
-}
-
 void freeProgram(Program* pProg)
 {
     if (!pProg)
@@ -226,8 +189,110 @@ void freeIdentExpr(IdentExpr* pIdentExpr)
     free(pIdentExpr);
 }
 
-/* Implementing push and pop */
+/* Implementing Stringify */
+String* stringifyProgram(Program* pProg)
+{
+    if (!pProg)
+        return NULL;
 
+    String* output = mkString("");
+    struct ProgNode* tmp = pProg->tail->before;
+    while (tmp != pProg->head)
+    {
+        concatFreeString(output, stringifyStmt(tmp->value));
+        tmp = tmp->before;
+    }
+
+    return output;
+}
+
+String* stringifyStmt(Stmt* pStmt)
+{
+    if (!pStmt)
+        return NULL;
+
+    String* output = NULL;
+
+    switch (pStmt->type)
+    {
+    case STMT_LET:
+        output = stringifyLetStmt(pStmt->inner.letStmt);
+        break;
+    case STMT_RETURN:
+        output = stringifyReturnStmt(pStmt->inner.returnStmt);
+        break;
+    case STMT_EXPRESSION:
+        output = stringifyExprStmt(pStmt->inner.exprStmt);
+        break;
+    default:
+        break;
+    }
+
+    return output;
+}
+
+String* stringifyExpr(Expr* pExpr)
+{
+    if (!pExpr)
+        return NULL;
+
+    String* output = NULL;
+
+    switch (pExpr->type)
+    {
+    case EXPR_IDENT:
+        output = stringifyIdentExpr(pExpr->inner.identExpr);
+        break;
+    default:
+        break;
+    }
+
+    return output;
+}
+
+String* stringifyLetStmt(LetStmt* pLetStmt)
+{
+    if (!pLetStmt)
+        return NULL;
+
+    String* output = mkString("let ");
+    concatFreeString(output, stringifyIdentExpr(pLetStmt->name));
+    appendStr(output, " = ");
+    if (pLetStmt->value)
+        concatFreeString(output, stringifyExpr(pLetStmt->value));
+    appendStr(output, ";");
+
+    return output;
+}
+
+String* stringifyReturnStmt(ReturnStmt* pReturnStmt)
+{
+    if (!pReturnStmt)
+        return NULL;
+
+    String* output = mkString("return ");
+    if (!pReturnStmt->returnValue)
+        concatFreeString(output, stringifyExpr(pReturnStmt->returnValue));
+    appendStr(output, ";");
+
+    return output;
+}
+
+String* stringifyExprStmt(ExprStmt* pExprStmt)
+{
+    if (!pExprStmt || !pExprStmt->expression)
+        return NULL;
+    return stringifyExpr(pExprStmt->expression);
+}
+
+String* stringifyIdentExpr(IdentExpr* pIdentExpr)
+{
+    if (!pIdentExpr)
+        return NULL;
+    return mkString(getStr(pIdentExpr->value));
+}
+
+/* Implementing push and pop */
 void pushStmt(Program* pProg, Stmt** pStmt)
 {
     if (!pProg || !pStmt)

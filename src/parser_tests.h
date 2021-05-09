@@ -137,7 +137,7 @@ int testLetStatement(Stmt* stmt, const char* name)
     LetStmt* letStmt = stmt->inner.letStmt;
     if (cmpStringStr(letStmt->name->value, name) != 0)
     {
-        PRINT_ERR("letStmt->name->value is not `%s`.\n got `%s`.", name,
+        PRINT_ERR("letStmt->name->value is not `%s`. got `%s`.", name,
                   getStr(letStmt->name->value));
         return FALSE;
     }

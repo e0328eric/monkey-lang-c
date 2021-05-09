@@ -62,6 +62,84 @@ void freeParser(Parser* p)
     free(p);
 }
 
+Program* parseProgram(Parser* p)
+{
+    Program* program = mkProgram();
+    Stmt* stmt = NULL;
+
+    while (p->curToken.type != T_EOF)
+    {
+        stmt = parseStmt(p);
+        if (stmt->inner.checkIsNull != 0)
+            pushStmt(program, &stmt);
+        else
+            freeStmt(stmt);
+        takeToken(p);
+    }
+
+    return program;
+}
+
+Stmt* parseStmt(Parser* p)
+{
+    Stmt* stmt = mkStmt();
+
+    switch (p->curToken.type)
+    {
+    case T_LET:
+        stmt->type = STMT_LET;
+        parseLetStmt(p, stmt);
+        break;
+
+    case T_RETURN:
+        stmt->type = STMT_RETURN;
+        parseReturnStmt(p, stmt);
+        break;
+
+    default:
+        stmt->type = STMT_EXPRESSION;
+        parseExprStmt(p, stmt);
+        break;
+    }
+
+    return stmt;
+}
+
+void parseLetStmt(Parser* p, Stmt* stmt)
+{
+    ASSERT(stmt);
+
+    LetStmt* letStmt = mkLetStmt();
+
+    EXPECT_PEEK(letStmt, T_IDENT, freeLetStmt);
+    letStmt->name->value = mkString(getStr(p->curToken.literal));
+    EXPECT_PEEK(letStmt, T_ASSIGN, freeLetStmt);
+
+    // TODO: We're skipping the expressions until we
+    // encounter a semicolon
+    while (!curTokenIs(p, T_SEMICOLON))
+        takeToken(p);
+
+    stmt->inner.letStmt = letStmt;
+}
+
+void parseReturnStmt(Parser* p, Stmt* stmt)
+{
+    ASSERT(stmt);
+
+    ReturnStmt* returnStmt = mkReturnStmt();
+    takeToken(p);
+
+    // TODO: We're skipping the expressions until we
+    // encounter a semicolon
+    while (!curTokenIs(p, T_SEMICOLON))
+        takeToken(p);
+
+    stmt->inner.returnStmt = returnStmt;
+}
+
+void parseExprStmt(Parser* p, Stmt* stmt) {}
+
 String** getErrors(Parser* p)
 {
     String** output = p->errors;
@@ -116,81 +194,3 @@ int expectPeek(Parser* p, TokenType tokType)
     peekError(p, tokType);
     return FALSE;
 }
-
-Program* parseProgram(Parser* p)
-{
-    Program* program = mkProgram();
-    Stmt* stmt = NULL;
-
-    while (p->curToken.type != T_EOF)
-    {
-        stmt = parseStmt(p);
-        if ((int)stmt->inner.checkIsNull != 0)
-            pushStmt(program, &stmt);
-        else
-            freeStmt(stmt);
-        takeToken(p);
-    }
-
-    return program;
-}
-
-Stmt* parseStmt(Parser* p)
-{
-    Stmt* stmt = mkStmt();
-
-    switch (p->curToken.type)
-    {
-    case T_LET:
-        stmt->type = STMT_LET;
-        parseLetStmt(p, stmt);
-        break;
-
-    case T_RETURN:
-        stmt->type = STMT_RETURN;
-        parseReturnStmt(p, stmt);
-        break;
-
-    default:
-        stmt->type = STMT_EXPRESSION;
-        parseExprStmt(p, stmt);
-        break;
-    }
-
-    return stmt;
-}
-
-void parseLetStmt(Parser* p, Stmt* stmt)
-{
-    ASSERT(stmt);
-
-    LetStmt* letStmt = mkLetStmt();
-
-    EXPECT_PEEK(letStmt, T_IDENT, freeLetStmt);
-    concatString(letStmt->name->value, p->curToken.literal);
-    EXPECT_PEEK(letStmt, T_ASSIGN, freeLetStmt);
-
-    // TODO: We're skipping the expressions until we
-    // encounter a semicolon
-    while (!curTokenIs(p, T_SEMICOLON))
-        takeToken(p);
-
-    stmt->inner.letStmt = letStmt;
-}
-
-void parseReturnStmt(Parser* p, Stmt* stmt)
-{
-    ASSERT(stmt);
-
-    ReturnStmt* returnStmt = mkReturnStmt();
-    takeToken(p);
-
-    // TODO: We're skipping the expressions until we
-    // encounter a semicolon
-    while (!curTokenIs(p, T_SEMICOLON))
-        takeToken(p);
-
-    stmt->inner.returnStmt = returnStmt;
-}
-
-void parseExprStmt(Parser* p, Stmt* stmt) {}
