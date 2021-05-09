@@ -6,6 +6,8 @@
 TEST(TestProgramPushAndPop)
 {
     static int testStatus = TEST_SUCESSED;
+    int expected[] = {2, 1, 3, 3, 1};
+    Stmt* tmp = NULL;
 
     Program* program = mkProgram();
     Stmt* stmt1 = mkStmt();
@@ -35,9 +37,6 @@ TEST(TestProgramPushAndPop)
         goto TEST_IS_FAILED;
     }
 
-    int expected[] = {2, 1, 3, 3, 1};
-
-    Stmt* tmp = NULL;
     for (int i = 0; i < 5; ++i)
     {
         tmp = popStmt(program);
@@ -63,6 +62,37 @@ TEST_IS_FAILED:
     return testStatus;
 }
 
-MAIN_TEST(RUN_TEST(TestProgramPushAndPop))
+TEST(Stringify)
+{
+    static int testStatus = TEST_SUCESSED;
+
+    Program* program = mkProgram();
+    Stmt* stmt = mkStmt();
+    stmt->type = STMT_LET;
+    stmt->inner.letStmt = mkLetStmt();
+    stmt->inner.letStmt->name->value = mkString("myVar");
+    stmt->inner.letStmt->value->type = EXPR_IDENT;
+    stmt->inner.letStmt->value->inner.identExpr = mkIdentExpr();
+    stmt->inner.letStmt->value->inner.identExpr->value = mkString("anotherVar");
+    pushStmt(program, &stmt);
+
+    String* gotString = stringifyProgram(program);
+    if (cmpStringStr(gotString, "let myVar = anotherVar;") != 0)
+    {
+        PRINT_ERR("expected `let myVar = anotherVar`, got = `%s`",
+                  getStr(gotString));
+        testStatus = TEST_FAILED;
+    }
+
+    freeString(gotString);
+    freeProgram(program);
+    return testStatus;
+}
+
+MAIN_TEST(
+    {
+        RUN_TEST(TestProgramPushAndPop);
+        RUN_TEST(Stringify);
+    })
 
 #undef MAIN_TEST_NAME // End TestAst

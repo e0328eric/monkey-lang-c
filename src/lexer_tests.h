@@ -134,5 +134,9 @@ TEST(TestComplexLexing)
     TEST_LEXER;
 }
 
-MAIN_TEST(RUN_TEST(TestNextToken) RUN_TEST(TestComplexLexing))
+MAIN_TEST(
+    {
+        RUN_TEST(TestNextToken);
+        RUN_TEST(TestComplexLexing);
+    })
 #undef MAIN_TEST_NAME // End TestLexer

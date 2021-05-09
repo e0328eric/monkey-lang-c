@@ -3,13 +3,7 @@
 
 #include "token.h"
 
-typedef struct
-{
-    const char* input;
-    int position;
-    int readPosition;
-    char ch;
-} Lexer;
+typedef struct Lexer Lexer;
 
 Lexer* mkLexer(const char*);
 void freeLexer(Lexer*);

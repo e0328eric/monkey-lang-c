@@ -2,14 +2,9 @@
 #define _MONKEY_LANG_SRC_AST_H_
 
 #include <ctype.h>
+#include <stdint.h>
 
-typedef enum
-{
-    EMPTY_NODE = 0,
-    NODE_PROGRAM,
-    NODE_STMT,
-    NODE_EXPR,
-} NodeType;
+#include "dynString.h"
 
 typedef enum
 {
@@ -23,9 +18,10 @@ typedef enum
 {
     EMPTY_EXPR = 0,
     EXPR_IDENT,
+    EXPR_INTEGER,
+    EXPR_PREFIX,
 } ExprType;
 
-typedef struct Node Node;
 typedef struct Program Program;
 typedef struct Stmt Stmt;
 typedef struct Expr Expr;
@@ -35,8 +31,9 @@ typedef struct ReturnStmt ReturnStmt;
 typedef struct ExprStmt ExprStmt;
 
 typedef struct IdentExpr IdentExpr;
+typedef struct IntExpr IntExpr;
+typedef struct PrefixExpr PrefixExpr;
 
-Node* mkNode(void);
 Program* mkProgram(void);
 Stmt* mkStmt(void);
 Expr* mkExpr(void);
@@ -44,8 +41,9 @@ LetStmt* mkLetStmt(void);
 ReturnStmt* mkReturnStmt(void);
 ExprStmt* mkExprStmt(void);
 IdentExpr* mkIdentExpr(void);
+IntExpr* mkIntExpr(void);
+PrefixExpr* mkPrefixExpr(void);
 
-void freeNode(Node*);
 void freeProgram(Program*);
 void freeStmt(Stmt*);
 void freeExpr(Expr*);
@@ -53,6 +51,18 @@ void freeLetStmt(LetStmt*);
 void freeReturnStmt(ReturnStmt*);
 void freeExprStmt(ExprStmt*);
 void freeIdentExpr(IdentExpr*);
+void freeIntExpr(IntExpr*);
+void freePrefixExpr(PrefixExpr*);
+
+String* stringifyProgram(Program*);
+String* stringifyStmt(Stmt*);
+String* stringifyExpr(Expr*);
+String* stringifyLetStmt(LetStmt*);
+String* stringifyReturnStmt(ReturnStmt*);
+String* stringifyExprStmt(ExprStmt*);
+String* stringifyIdentExpr(IdentExpr*);
+String* stringifyIntExpr(IntExpr*);
+String* stringifyPrefixExpr(PrefixExpr*);
 
 void pushStmt(Program*, Stmt**);
 Stmt* popStmt(Program*);
@@ -61,18 +71,6 @@ Stmt* popStmt(Program*);
 
 struct Stmt;
 struct Expr;
-
-struct Node
-{
-    NodeType type;
-    union
-    {
-        int ignore; // To make it zero initizlize
-        Program* program;
-        Stmt* stmt;
-        Expr* expr;
-    } inner;
-};
 
 struct ProgNode
 {
@@ -93,7 +91,7 @@ struct Stmt
     StmtType type;
     union
     {
-        int ignore; // To make it zero initizlize
+        int checkIsNull; // To make it zero initizlize
         LetStmt* letStmt;
         ReturnStmt* returnStmt;
         ExprStmt* exprStmt;
@@ -105,8 +103,10 @@ struct Expr
     ExprType type;
     union
     {
-        int ignore; // To make it zero initizlize
+        int checkIsNull; // To make it zero initizlize
         IdentExpr* identExpr;
+        IntExpr* intExpr;
+        PrefixExpr* prefixExpr;
     } inner;
 };
 
@@ -130,7 +130,18 @@ struct ExprStmt
 /* Expressions */
 struct IdentExpr
 {
-    const char* value;
+    String* value;
+};
+
+struct IntExpr
+{
+    int64_t value;
+};
+
+struct PrefixExpr
+{
+    String* operator;
+    Expr* right;
 };
 
 #endif //_MONKEY_LANG_SRC_AST_H_

@@ -19,7 +19,7 @@ void startREPL(void)
 
     char* line = NULL;
     Lexer* l = NULL;
-    Token tok = (Token){-2, NULL};
+    Token tok = INIT_TOKEN;
 
     while (1)
     {

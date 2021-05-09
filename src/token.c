@@ -11,6 +11,9 @@ Token mkToken(TokenType type, const char* str)
 
 void freeToken(Token* pTok)
 {
+    if (!pTok || pTok->type == T_ZERO)
+        return;
+
     freeString(pTok->literal);
     pTok->literal = NULL;
 }
@@ -38,6 +41,8 @@ const char* printTokType(TokenType tokType)
 {
     switch (tokType)
     {
+    case T_ZERO:
+        return "EMPTY_TOKEN";
     case T_ILLEGAL:
         return "ILLEGAL";
     case T_EOF:

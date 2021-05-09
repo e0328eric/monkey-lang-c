@@ -5,6 +5,7 @@
 
 typedef enum
 {
+    T_ZERO = -2,
     T_ILLEGAL = -1,
     T_EOF = 0,
     T_IDENT,
@@ -33,6 +34,9 @@ typedef enum
     T_FALSE,
     T_RETURN,
 } TokenType;
+
+#define INIT_TOKEN \
+    (Token) { T_ZERO, NULL }
 
 typedef struct
 {
