@@ -1,6 +1,7 @@
-#include "ast.h"
 #include <stdio.h>
 #include <stdlib.h>
+
+#include "ast.h"
 
 #define __PRIVATE_PARSER_OBJECTS__
 #include "parser.h"
