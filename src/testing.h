@@ -1,7 +1,9 @@
 #ifndef _MONKEY_LANG_TESTS_TEST_H_
 #define _MONKEY_LANG_TESTS_TEST_H_
 
+// Basic standard headers might using at all test headers
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #define TEST_FAILED   0

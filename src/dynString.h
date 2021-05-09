@@ -17,6 +17,8 @@ void appendNStr(String*, const char*, size_t);
 void concatString(String*, String*);
 void concatFreeString(String*, String*);
 int cmpString(const String*, const String*);
+int cmpStringStr(const String*, const char*);
+int cmpStrString(const char*, const String*);
 
 const char* getStr(const String*);
 size_t getLen(const String*);

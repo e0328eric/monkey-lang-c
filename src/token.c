@@ -11,6 +11,9 @@ Token mkToken(TokenType type, const char* str)
 
 void freeToken(Token* pTok)
 {
+    if (!pTok || pTok->type == T_ZERO)
+        return;
+
     freeString(pTok->literal);
     pTok->literal = NULL;
 }

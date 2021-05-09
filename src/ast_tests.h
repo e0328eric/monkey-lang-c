@@ -6,6 +6,8 @@
 TEST(TestProgramPushAndPop)
 {
     static int testStatus = TEST_SUCESSED;
+    int expected[] = {2, 1, 3, 3, 1};
+    Stmt* tmp = NULL;
 
     Program* program = mkProgram();
     Stmt* stmt1 = mkStmt();
@@ -35,9 +37,6 @@ TEST(TestProgramPushAndPop)
         goto TEST_IS_FAILED;
     }
 
-    int expected[] = {2, 1, 3, 3, 1};
-
-    Stmt* tmp = NULL;
     for (int i = 0; i < 5; ++i)
     {
         tmp = popStmt(program);

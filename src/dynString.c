@@ -39,6 +39,9 @@ struct String* mkNString(const char* str, size_t strLen)
 
 void freeString(struct String* pString)
 {
+    if (!pString)
+        return;
+
     free(pString->inner);
     free(pString);
 }
@@ -103,6 +106,16 @@ void concatFreeString(struct String* pString1, struct String* pString2)
 int cmpString(const struct String* pString1, const struct String* pString2)
 {
     return strcmp(pString1->inner, pString2->inner);
+}
+
+int cmpStringStr(const String* pString, const char* str)
+{
+    return strcmp(pString->inner, str);
+}
+
+int cmpStrString(const char* str, const String* pString)
+{
+    return strcmp(str, pString->inner);
 }
 
 const char* getStr(const struct String* pString) { return pString->inner; }

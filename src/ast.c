@@ -90,7 +90,7 @@ IdentExpr* mkIdentExpr(void)
 {
     IdentExpr* output = malloc(sizeof(IdentExpr));
 
-    output->value = NULL;
+    output->value = mkString("");
 
     return output;
 }
@@ -218,10 +218,10 @@ void freeExprStmt(ExprStmt* pExprStmt)
 
 void freeIdentExpr(IdentExpr* pIdentExpr)
 {
-    if (!pIdentExpr || !pIdentExpr->value)
+    if (!pIdentExpr)
         return;
 
-    free((void*)pIdentExpr->value);
+    freeString(pIdentExpr->value);
 
     free(pIdentExpr);
 }

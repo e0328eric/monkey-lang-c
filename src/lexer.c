@@ -3,6 +3,15 @@
 
 #include "lexer.h"
 
+/* Lexer Definition */
+struct Lexer
+{
+    const char* input;
+    int position;
+    int readPosition;
+    char ch;
+};
+
 /* Private Function Signatures */
 void readChar(Lexer*);
 char peekChar(const Lexer*);
@@ -28,8 +37,9 @@ Lexer* mkLexer(const char* input)
 
 void freeLexer(Lexer* l)
 {
+    if (!l)
+        return;
     free(l);
-    l = NULL;
 }
 
 void readChar(Lexer* l)

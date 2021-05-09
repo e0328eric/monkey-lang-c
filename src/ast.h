@@ -3,6 +3,8 @@
 
 #include <ctype.h>
 
+#include "dynString.h"
+
 typedef enum
 {
     EMPTY_NODE = 0,
@@ -130,7 +132,7 @@ struct ExprStmt
 /* Expressions */
 struct IdentExpr
 {
-    const char* value;
+    String* value;
 };
 
 #endif //_MONKEY_LANG_SRC_AST_H_
