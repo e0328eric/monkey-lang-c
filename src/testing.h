@@ -23,15 +23,15 @@
 #define PASTER_CORE(x, y) x##___##y
 #define PASTER(x, y)      PASTER_CORE(x, y)
 
-#define MAIN_TEST_CORE(mainName, ...)       \
+#define MAIN_TEST_CORE(mainName, testLists) \
     int mainName(void)                      \
     {                                       \
         int __resultStatus = TEST_SUCESSED; \
         int isPassed;                       \
-        __VA_ARGS__;                        \
+        testLists;                          \
         return __resultStatus;              \
     }
-#define MAIN_TEST(...) MAIN_TEST_CORE(MAIN_TEST_NAME, __VA_ARGS__)
+#define MAIN_TEST(testLists) MAIN_TEST_CORE(MAIN_TEST_NAME, testLists)
 
 #define RUN_MAIN_TEST(mainName)                                             \
     {                                                                       \

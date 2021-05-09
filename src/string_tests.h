@@ -185,7 +185,14 @@ TEST(concatString)
     return TEST_SUCESSED;
 }
 
-MAIN_TEST(RUN_TEST(mkString) RUN_TEST(mkNString) RUN_TEST(appendChar)
-              RUN_TEST(appendStr) RUN_TEST(appendNStr) RUN_TEST(concatString))
+MAIN_TEST(
+    {
+        RUN_TEST(mkString);
+        RUN_TEST(mkNString);
+        RUN_TEST(appendChar);
+        RUN_TEST(appendStr);
+        RUN_TEST(appendNStr);
+        RUN_TEST(concatString);
+    })
 
 #undef MAIN_TEST_NAME // End TestLexer

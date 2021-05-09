@@ -84,6 +84,21 @@ IdentExpr* mkIdentExpr(void)
     return output;
 }
 
+IntExpr* mkIntExpr(void)
+{
+    IntExpr* output = malloc(sizeof(IntExpr));
+    output->value = 0;
+    return output;
+}
+
+PrefixExpr* mkPrefixExpr(void)
+{
+    PrefixExpr* output = malloc(sizeof(PrefixExpr));
+    output->operator= NULL;
+    output->right = mkExpr();
+    return output;
+}
+
 /* Implementing Destructors */
 void freeProgram(Program* pProg)
 {
@@ -112,14 +127,18 @@ void freeStmt(Stmt* pStmt)
     case STMT_LET:
         freeLetStmt(pStmt->inner.letStmt);
         break;
+
     case STMT_RETURN:
         freeReturnStmt(pStmt->inner.returnStmt);
         break;
+
     case STMT_EXPRESSION:
         freeExprStmt(pStmt->inner.exprStmt);
         break;
+
     case EMPTY_STMT:
         break;
+
     default:
         UNDEFINED_OBJECT_FOUND("Stmt");
         break;
@@ -138,8 +157,18 @@ void freeExpr(Expr* pExpr)
     case EXPR_IDENT:
         freeIdentExpr(pExpr->inner.identExpr);
         break;
+
+    case EXPR_INTEGER:
+        freeIntExpr(pExpr->inner.intExpr);
+        break;
+
+    case EXPR_PREFIX:
+        freePrefixExpr(pExpr->inner.prefixExpr);
+        break;
+
     case EMPTY_EXPR:
         break;
+
     default:
         UNDEFINED_OBJECT_FOUND("Expr");
         break;
@@ -189,6 +218,24 @@ void freeIdentExpr(IdentExpr* pIdentExpr)
     free(pIdentExpr);
 }
 
+void freeIntExpr(IntExpr* pIntExpr)
+{
+    if (!pIntExpr)
+        return;
+
+    free(pIntExpr);
+}
+
+void freePrefixExpr(PrefixExpr* pPrefixExpr)
+{
+    if (!pPrefixExpr)
+        return;
+
+    freeString(pPrefixExpr->operator);
+    freeExpr(pPrefixExpr->right);
+    free(pPrefixExpr);
+}
+
 /* Implementing Stringify */
 String* stringifyProgram(Program* pProg)
 {
@@ -218,12 +265,15 @@ String* stringifyStmt(Stmt* pStmt)
     case STMT_LET:
         output = stringifyLetStmt(pStmt->inner.letStmt);
         break;
+
     case STMT_RETURN:
         output = stringifyReturnStmt(pStmt->inner.returnStmt);
         break;
+
     case STMT_EXPRESSION:
         output = stringifyExprStmt(pStmt->inner.exprStmt);
         break;
+
     default:
         break;
     }
@@ -243,6 +293,15 @@ String* stringifyExpr(Expr* pExpr)
     case EXPR_IDENT:
         output = stringifyIdentExpr(pExpr->inner.identExpr);
         break;
+
+    case EXPR_INTEGER:
+        output = stringifyIntExpr(pExpr->inner.intExpr);
+        break;
+
+    case EXPR_PREFIX:
+        output = stringifyPrefixExpr(pExpr->inner.prefixExpr);
+        break;
+
     default:
         break;
     }
@@ -282,6 +341,7 @@ String* stringifyExprStmt(ExprStmt* pExprStmt)
 {
     if (!pExprStmt || !pExprStmt->expression)
         return NULL;
+
     return stringifyExpr(pExprStmt->expression);
 }
 
@@ -289,7 +349,32 @@ String* stringifyIdentExpr(IdentExpr* pIdentExpr)
 {
     if (!pIdentExpr)
         return NULL;
+
     return mkString(getStr(pIdentExpr->value));
+}
+
+String* stringifyIntExpr(IntExpr* pIntExpr)
+{
+    if (!pIntExpr)
+        return NULL;
+
+    char buffer[22];
+    sprintf(buffer, "%lld", pIntExpr->value);
+
+    return mkString(buffer);
+}
+
+String* stringifyPrefixExpr(PrefixExpr* pPrefixExpr)
+{
+    if (!pPrefixExpr)
+        return NULL;
+
+    String* output = mkString("(");
+    concatString(output, pPrefixExpr->operator);
+    concatFreeString(output, stringifyExpr(pPrefixExpr->right));
+    appendChar(output, ')');
+
+    return output;
 }
 
 /* Implementing push and pop */

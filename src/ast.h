@@ -2,6 +2,7 @@
 #define _MONKEY_LANG_SRC_AST_H_
 
 #include <ctype.h>
+#include <stdint.h>
 
 #include "dynString.h"
 
@@ -17,6 +18,8 @@ typedef enum
 {
     EMPTY_EXPR = 0,
     EXPR_IDENT,
+    EXPR_INTEGER,
+    EXPR_PREFIX,
 } ExprType;
 
 typedef struct Program Program;
@@ -28,6 +31,8 @@ typedef struct ReturnStmt ReturnStmt;
 typedef struct ExprStmt ExprStmt;
 
 typedef struct IdentExpr IdentExpr;
+typedef struct IntExpr IntExpr;
+typedef struct PrefixExpr PrefixExpr;
 
 Program* mkProgram(void);
 Stmt* mkStmt(void);
@@ -36,6 +41,8 @@ LetStmt* mkLetStmt(void);
 ReturnStmt* mkReturnStmt(void);
 ExprStmt* mkExprStmt(void);
 IdentExpr* mkIdentExpr(void);
+IntExpr* mkIntExpr(void);
+PrefixExpr* mkPrefixExpr(void);
 
 void freeProgram(Program*);
 void freeStmt(Stmt*);
@@ -44,6 +51,8 @@ void freeLetStmt(LetStmt*);
 void freeReturnStmt(ReturnStmt*);
 void freeExprStmt(ExprStmt*);
 void freeIdentExpr(IdentExpr*);
+void freeIntExpr(IntExpr*);
+void freePrefixExpr(PrefixExpr*);
 
 String* stringifyProgram(Program*);
 String* stringifyStmt(Stmt*);
@@ -52,6 +61,8 @@ String* stringifyLetStmt(LetStmt*);
 String* stringifyReturnStmt(ReturnStmt*);
 String* stringifyExprStmt(ExprStmt*);
 String* stringifyIdentExpr(IdentExpr*);
+String* stringifyIntExpr(IntExpr*);
+String* stringifyPrefixExpr(PrefixExpr*);
 
 void pushStmt(Program*, Stmt**);
 Stmt* popStmt(Program*);
@@ -94,6 +105,8 @@ struct Expr
     {
         int checkIsNull; // To make it zero initizlize
         IdentExpr* identExpr;
+        IntExpr* intExpr;
+        PrefixExpr* prefixExpr;
     } inner;
 };
 
@@ -118,6 +131,17 @@ struct ExprStmt
 struct IdentExpr
 {
     String* value;
+};
+
+struct IntExpr
+{
+    int64_t value;
+};
+
+struct PrefixExpr
+{
+    String* operator;
+    Expr* right;
 };
 
 #endif //_MONKEY_LANG_SRC_AST_H_

@@ -1,7 +1,8 @@
+#include "ast.h"
 #include <stdio.h>
 #include <stdlib.h>
 
-#define __PRIVATE_PARSER_FUNCTIONS__
+#define __PRIVATE_PARSER_OBJECTS__
 #include "parser.h"
 
 #define FALSE 0
@@ -18,9 +19,71 @@
     if (!expectPeek(p, tokType))                   \
     {                                              \
         destructor(nodeName);                      \
-        stmt->inner.nodeName = NULL;               \
+        stmt->inner.checkIsNull = 0;               \
         return;                                    \
     }
+
+const PrefixParseFn prefixParseFns[] = {
+    NULL,            // T_EOF = 0
+    parseIdentExpr,  // T_IDENT
+    parseIntExpr,    // T_INT
+    NULL,            // T_ASSIGN
+    NULL,            // T_PLUS
+    parsePrefixExpr, // T_MINUS
+    parsePrefixExpr, // T_BANG
+    NULL,            // T_ASTERISK
+    NULL,            // T_LT
+    NULL,            // T_GT
+    NULL,            // T_EQ
+    NULL,            // T_NOT_EQ
+    NULL,            // T_SLASH
+    NULL,            // T_COMMA
+    NULL,            // T_SEMICOLON
+    NULL,            // T_LPAREN
+    NULL,            // T_RPAREN
+    NULL,            // T_LBRACE
+    NULL,            // T_RBRACE
+    NULL,            // T_LET
+    NULL,            // T_FUNCTION
+    NULL,            // T_IF
+    NULL,            // T_ELSE
+    NULL,            // T_TRUE
+    NULL,            // T_FALSE
+    NULL,            // T_RETURN
+    NULL,            // T_ZERO
+    NULL,            // T_ILLEGAL
+};
+
+const InfixParseFn infixParseFns[] = {
+    NULL, // T_EOF
+    NULL, // T_IDENT
+    NULL, // T_INT
+    NULL, // T_ASSIGN
+    NULL, // T_PLUS
+    NULL, // T_MINUS
+    NULL, // T_BANG
+    NULL, // T_ASTERISK
+    NULL, // T_LT
+    NULL, // T_GT
+    NULL, // T_EQ
+    NULL, // T_NOT_EQ
+    NULL, // T_SLASH
+    NULL, // T_COMMA
+    NULL, // T_SEMICOLON
+    NULL, // T_LPAREN
+    NULL, // T_RPAREN
+    NULL, // T_LBRACE
+    NULL, // T_RBRACE
+    NULL, // T_LET
+    NULL, // T_FUNCTION
+    NULL, // T_IF
+    NULL, // T_ELSE
+    NULL, // T_TRUE
+    NULL, // T_FALSE
+    NULL, // T_RETURN
+    NULL, // T_ZERO
+    NULL, // T_ILLEGAL
+};
 
 struct Parser
 {
@@ -138,7 +201,64 @@ void parseReturnStmt(Parser* p, Stmt* stmt)
     stmt->inner.returnStmt = returnStmt;
 }
 
-void parseExprStmt(Parser* p, Stmt* stmt) {}
+void parseExprStmt(Parser* p, Stmt* stmt)
+{
+    ASSERT(stmt);
+
+    ExprStmt* exprStmt = mkExprStmt();
+    parseExpr(p, exprStmt->expression, LOWEST_PREC);
+
+    if (peekTokenIs(p, T_SEMICOLON))
+        takeToken(p);
+
+    stmt->inner.exprStmt = exprStmt;
+}
+
+void parseExpr(Parser* p, Expr* expr, Precedence prec)
+{
+    ASSERT(expr);
+
+    PrefixParseFn prefix = prefixParseFns[p->curToken.type];
+    if (!prefix)
+    {
+        noPrefixParseFnError(p, p->curToken.type);
+        expr->inner.checkIsNull = 0;
+        return;
+    }
+
+    prefix(p, expr);
+}
+
+void parseIdentExpr(Parser* p, Expr* expr)
+{
+    ASSERT(expr);
+
+    expr->type = EXPR_IDENT;
+    expr->inner.identExpr = mkIdentExpr();
+    expr->inner.identExpr->value = mkString(getStr(p->curToken.literal));
+}
+
+void parseIntExpr(Parser* p, Expr* expr)
+{
+    ASSERT(expr);
+
+    expr->type = EXPR_INTEGER;
+    expr->inner.intExpr = mkIntExpr();
+    expr->inner.intExpr->value = atoll(getStr(p->curToken.literal));
+}
+
+void parsePrefixExpr(Parser* p, Expr* expr)
+{
+    ASSERT(expr);
+
+    expr->type = EXPR_PREFIX;
+    expr->inner.prefixExpr = mkPrefixExpr();
+    expr->inner.prefixExpr->operator= mkString(getStr(p->curToken.literal));
+
+    takeToken(p);
+
+    parseExpr(p, expr->inner.prefixExpr->right, PREFIX_PREC);
+}
 
 String** getErrors(Parser* p)
 {
@@ -160,6 +280,25 @@ void peekError(Parser* p, TokenType tokType)
 
     sprintf(msg, "expected next token to be %s, got %s instead",
             printTokType(tokType), printTokType(p->peekToken.type));
+
+    if (!p->errors)
+        p->errors = malloc(sizeof(String*) * (MAXIMUM_ERR_MSGS + 1));
+    p->errors[p->errLen++] = mkString(msg);
+    p->errors[p->errLen] = NULL;
+}
+
+void noPrefixParseFnError(Parser* p, TokenType tokType)
+{
+    char msg[60];
+
+    if (p->errLen >= MAXIMUM_ERR_MSGS)
+    {
+        fprintf(stderr, "too many parse error occurs.");
+        return;
+    }
+
+    sprintf(msg, "no prefix parser function for %s found",
+            printTokType(tokType));
 
     if (!p->errors)
         p->errors = malloc(sizeof(String*) * (MAXIMUM_ERR_MSGS + 1));

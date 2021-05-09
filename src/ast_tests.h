@@ -89,6 +89,10 @@ TEST(Stringify)
     return testStatus;
 }
 
-MAIN_TEST(RUN_TEST(TestProgramPushAndPop) RUN_TEST(Stringify))
+MAIN_TEST(
+    {
+        RUN_TEST(TestProgramPushAndPop);
+        RUN_TEST(Stringify);
+    })
 
 #undef MAIN_TEST_NAME // End TestAst
