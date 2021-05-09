@@ -24,9 +24,9 @@ int peekTokenIs(Parser*, TokenType);
 int expectPeek(Parser*, TokenType);
 
 Stmt* parseStmt(Parser*);
-LetStmt* parseLetStmt(Parser*);
-ReturnStmt* parseReturnStmt(Parser*);
-ExprStmt* parseExprStmt(Parser*);
+void parseLetStmt(Parser*, Stmt*);
+void parseReturnStmt(Parser*, Stmt*);
+void parseExprStmt(Parser*, Stmt*);
 
 #endif
 

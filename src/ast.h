@@ -69,7 +69,7 @@ struct Node
     NodeType type;
     union
     {
-        int ignore; // To make it zero initizlize
+        int checkIsNull; // To make it zero initizlize
         Program* program;
         Stmt* stmt;
         Expr* expr;
@@ -95,7 +95,7 @@ struct Stmt
     StmtType type;
     union
     {
-        int ignore; // To make it zero initizlize
+        int checkIsNull; // To make it zero initizlize
         LetStmt* letStmt;
         ReturnStmt* returnStmt;
         ExprStmt* exprStmt;
@@ -107,7 +107,7 @@ struct Expr
     ExprType type;
     union
     {
-        int ignore; // To make it zero initizlize
+        int checkIsNull; // To make it zero initizlize
         IdentExpr* identExpr;
     } inner;
 };

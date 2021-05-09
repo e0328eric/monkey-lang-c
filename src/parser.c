@@ -7,11 +7,19 @@
 #define FALSE 0
 #define TRUE  1
 
+#define ASSERT(expected)                                 \
+    if (!(expected))                                     \
+    {                                                    \
+        fprintf(stderr, "Assert Failed for " #expected); \
+        __asm("int $3");                                 \
+    }
+
 #define EXPECT_PEEK(nodeName, tokType, destructor) \
     if (!expectPeek(p, tokType))                   \
     {                                              \
         destructor(nodeName);                      \
-        return NULL;                               \
+        stmt->inner.nodeName = NULL;               \
+        return;                                    \
     }
 
 struct Parser
@@ -65,16 +73,18 @@ String** getErrors(Parser* p)
 void peekError(Parser* p, TokenType tokType)
 {
     char msg[60];
+
     if (p->errLen >= MAXIMUM_ERR_MSGS)
     {
         fprintf(stderr, "too many parse error occurs.");
         return;
     }
+
     sprintf(msg, "expected next token to be %s, got %s instead",
             printTokType(tokType), printTokType(p->peekToken.type));
-    p->errors = p->errors ? realloc(p->errors,
-                                    sizeof(String*) * (size_t)(p->errLen + 1))
-                          : malloc(sizeof(String*));
+
+    if (!p->errors)
+        p->errors = malloc(sizeof(String*) * (MAXIMUM_ERR_MSGS + 1));
     p->errors[p->errLen++] = mkString(msg);
     p->errors[p->errLen] = NULL;
 }
@@ -115,8 +125,10 @@ Program* parseProgram(Parser* p)
     while (p->curToken.type != T_EOF)
     {
         stmt = parseStmt(p);
-        if (stmt)
+        if ((int)stmt->inner.checkIsNull != 0)
             pushStmt(program, &stmt);
+        else
+            freeStmt(stmt);
         takeToken(p);
     }
 
@@ -131,25 +143,27 @@ Stmt* parseStmt(Parser* p)
     {
     case T_LET:
         stmt->type = STMT_LET;
-        stmt->inner.letStmt = parseLetStmt(p);
+        parseLetStmt(p, stmt);
         break;
 
     case T_RETURN:
         stmt->type = STMT_RETURN;
-        stmt->inner.returnStmt = parseReturnStmt(p);
+        parseReturnStmt(p, stmt);
         break;
 
     default:
         stmt->type = STMT_EXPRESSION;
-        stmt->inner.exprStmt = parseExprStmt(p);
+        parseExprStmt(p, stmt);
         break;
     }
 
     return stmt;
 }
 
-LetStmt* parseLetStmt(Parser* p)
+void parseLetStmt(Parser* p, Stmt* stmt)
 {
+    ASSERT(stmt);
+
     LetStmt* letStmt = mkLetStmt();
 
     EXPECT_PEEK(letStmt, T_IDENT, freeLetStmt);
@@ -161,8 +175,22 @@ LetStmt* parseLetStmt(Parser* p)
     while (!curTokenIs(p, T_SEMICOLON))
         takeToken(p);
 
-    return letStmt;
+    stmt->inner.letStmt = letStmt;
 }
 
-ReturnStmt* parseReturnStmt(Parser* p) { return NULL; }
-ExprStmt* parseExprStmt(Parser* p) { return NULL; }
+void parseReturnStmt(Parser* p, Stmt* stmt)
+{
+    ASSERT(stmt);
+
+    ReturnStmt* returnStmt = mkReturnStmt();
+    takeToken(p);
+
+    // TODO: We're skipping the expressions until we
+    // encounter a semicolon
+    while (!curTokenIs(p, T_SEMICOLON))
+        takeToken(p);
+
+    stmt->inner.returnStmt = returnStmt;
+}
+
+void parseExprStmt(Parser* p, Stmt* stmt) {}

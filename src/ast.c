@@ -13,7 +13,7 @@ Node* mkNode(void)
     Node* output = malloc(sizeof(Node));
 
     output->type = EMPTY_NODE;
-    output->inner.ignore = 0;
+    output->inner.checkIsNull = 0;
 
     return output;
 }
@@ -43,7 +43,7 @@ Stmt* mkStmt(void)
     Stmt* output = malloc(sizeof(Stmt));
 
     output->type = EMPTY_STMT;
-    output->inner.ignore = 0;
+    output->inner.checkIsNull = 0;
 
     return output;
 }
@@ -53,7 +53,7 @@ Expr* mkExpr(void)
     Expr* output = malloc(sizeof(Expr));
 
     output->type = EMPTY_EXPR;
-    output->inner.ignore = 0;
+    output->inner.checkIsNull = 0;
 
     return output;
 }

@@ -1,3 +1,4 @@
+#include "ast.h"
 #define MAIN_TEST_NAME TestParser
 
 #include "parser.h"
@@ -70,6 +71,46 @@ TEST(TestLetStatements)
         }
         freeStmt(stmt);
     }
+#undef tt
+
+EXIT_IF_FAILED:
+    freeProgram(program);
+    freeParser(p);
+    return testStatus;
+}
+
+TEST(TestReturnStatements)
+{
+    static int testStatus = TEST_SUCESSED;
+
+    Stmt* stmt = NULL;
+    const char* input = "return 5;\n"
+                        "return 10;\n"
+                        "return 993322;";
+
+    MAKE_PARSER(3);
+
+    for (int i = 0; i < 3; ++i)
+    {
+        stmt = popStmt(program);
+        if (!stmt)
+        {
+            PRINT_ERR("stmt is NULL", NULL);
+            freeStmt(stmt);
+            testStatus = TEST_FAILED;
+            goto EXIT_IF_FAILED;
+        }
+
+        if (stmt->type != STMT_RETURN)
+        {
+            PRINT_ERR("stmt->type is not %d. got = %d", STMT_RETURN,
+                      stmt->type);
+            freeStmt(stmt);
+            testStatus = TEST_FAILED;
+            goto EXIT_IF_FAILED;
+        }
+        freeStmt(stmt);
+    }
 
 EXIT_IF_FAILED:
     freeProgram(program);
@@ -105,6 +146,6 @@ int testLetStatement(Stmt* stmt, const char* name)
 }
 #endif // _MONKEY_PARSER_TEST_H_
 
-MAIN_TEST(RUN_TEST(TestLetStatements))
+MAIN_TEST(RUN_TEST(TestLetStatements) RUN_TEST(TestReturnStatements))
 
 #undef MAIN_TEST_NAME // End TestParser

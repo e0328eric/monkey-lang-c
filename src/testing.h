@@ -49,10 +49,10 @@
             printf(" ");                                                    \
         printf("\n\n");                                                     \
         if (mainName() == TEST_FAILED)                                      \
-            printf(FAILED_COLOR "[" #mainName "]  "                         \
+            printf(FAILED_COLOR "\n[" #mainName "]  "                       \
                                 "  Test Failed...\n" RESET_COLOR);          \
         else                                                                \
-            printf(SUCESSED_COLOR "[" #mainName "]  "                       \
+            printf(SUCESSED_COLOR "\n[" #mainName "]  "                     \
                                   "  All tests are passed!\n" RESET_COLOR); \
         for (int i = 0; i < TEST_ROW_SIZE; ++i)                             \
             printf("=");                                                    \
