@@ -91,7 +91,7 @@ struct Stmt
     StmtType type;
     union
     {
-        int checkIsNull; // To make it zero initizlize
+        uintptr_t checkIsNull; // To make it zero initizlize
         LetStmt* letStmt;
         ReturnStmt* returnStmt;
         ExprStmt* exprStmt;
@@ -103,7 +103,7 @@ struct Expr
     ExprType type;
     union
     {
-        int checkIsNull; // To make it zero initizlize
+        uintptr_t checkIsNull; // To make it zero initizlize
         IdentExpr* identExpr;
         IntExpr* intExpr;
         PrefixExpr* prefixExpr;

@@ -1,7 +1,7 @@
 CC = clang
 CFLAGS = -std=c11 -O3 -Wall -Wextra -Wpedantic -Wconversion
 # For Debugging
-CFLAGS += -ggdb -fsanitize=leak -static-libsan
+CFLAGS += -ggdb
 INCLUDE = -lreadline
 LDFLAGS =
 

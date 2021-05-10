@@ -99,6 +99,8 @@ Parser* mkParser(Lexer* l)
 {
     Parser* output = malloc(sizeof(Parser));
     output->l = l;
+    output->curToken = INIT_TOKEN;
+    output->peekToken = INIT_TOKEN;
     output->errors = NULL;
     output->errLen = 0;
 

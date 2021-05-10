@@ -190,7 +190,7 @@ void freeLetStmt(LetStmt* pLetStmt)
 
 void freeReturnStmt(ReturnStmt* pReturnStmt)
 {
-    if (!pReturnStmt)
+    if (pReturnStmt == NULL)
         return;
 
     freeExpr(pReturnStmt->returnValue);
