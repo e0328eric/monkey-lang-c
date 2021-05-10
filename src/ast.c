@@ -334,6 +334,10 @@ String* stringifyExpr(Expr* pExpr)
         output = stringifyPrefixExpr(pExpr->inner.prefixExpr);
         break;
 
+    case EXPR_INFIX:
+        output = stringifyInfixExpr(pExpr->inner.infixExpr);
+        break;
+
     default:
         break;
     }

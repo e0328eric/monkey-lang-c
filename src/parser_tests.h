@@ -370,6 +370,113 @@ TEST(TestInfixExprs)
     return testStatus;
 }
 
+TEST(TestOperatorPrecedenceParsing)
+{
+    static int testStatus = TEST_SUCESSED;
+
+    Lexer* l = NULL;
+    Parser* p = NULL;
+    Program* program = NULL;
+    String** errors = NULL;
+    String* actual = NULL;
+
+    struct
+    {
+        const char* input;
+        const char* expected;
+    } tests[] = {
+        {
+            "-a * b",
+            "((-a) * b)",
+        },
+        {
+            "!-a",
+            "(!(-a))",
+        },
+        {
+            "a + b + c",
+            "((a + b) + c)",
+        },
+        {
+            "a + b - c",
+            "((a + b) - c)",
+        },
+        {
+            "a * b * c",
+            "((a * b) * c)",
+        },
+        {
+            "a * b / c",
+            "((a * b) / c)",
+        },
+        {
+            "a + b / c",
+            "(a + (b / c))",
+        },
+        {
+            "a + b * c + d / e - f",
+            "(((a + (b * c)) + (d / e)) - f)",
+        },
+        {
+            "3 + 4; -5 * 5",
+            "(3 + 4)((-5) * 5)",
+        },
+        {
+            "5 > 4 == 3 < 4",
+            "((5 > 4) == (3 < 4))",
+        },
+        {
+            "5 < 4 != 3 > 4",
+            "((5 < 4) != (3 > 4))",
+        },
+        {
+            "3 + 4 * 5 == 3 * 1 + 4 * 5",
+            "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))",
+        },
+        {NULL, NULL},
+    };
+
+#define tt tests[i]
+    for (int i = 0; tt.input; ++i)
+    {
+        l = mkLexer(tt.input);
+        p = mkParser(l);
+        program = parseProgram(p);
+        errors = getErrors(p);
+        if (errors)
+        {
+            for (int i = 0; errors[i]; ++i)
+            {
+                PRINT_ERR("%s", getStr(errors[i]));
+                freeString(errors[i]);
+            }
+            free(errors);
+            testStatus = TEST_FAILED;
+            freeProgram(program);
+            freeParser(p);
+            break;
+        }
+
+        actual = stringifyProgram(program);
+        if (cmpStringStr(actual, tt.expected) != 0)
+        {
+            PRINT_ERR("expected = %s\n got = %s", tt.expected, getStr(actual));
+            testStatus = TEST_FAILED;
+            freeString(actual);
+            freeProgram(program);
+            freeParser(p);
+            break;
+        }
+
+        freeString(actual);
+        freeProgram(program);
+        freeParser(p);
+    }
+#undef tt
+
+    return testStatus;
+}
+
 ///////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////
 
@@ -437,6 +544,7 @@ MAIN_TEST(
         RUN_TEST(TestIntegerLiteralExprs);
         RUN_TEST(TestPrefixExprs);
         RUN_TEST(TestInfixExprs);
+        RUN_TEST(TestOperatorPrecedenceParsing);
     })
 
 #undef MAIN_TEST_NAME // End TestParser
