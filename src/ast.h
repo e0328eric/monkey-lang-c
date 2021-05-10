@@ -19,6 +19,7 @@ typedef enum
     EMPTY_EXPR = 0,
     EXPR_IDENT,
     EXPR_INTEGER,
+    EXPR_BOOL,
     EXPR_PREFIX,
     EXPR_INFIX,
 } ExprType;
@@ -33,6 +34,7 @@ typedef struct ExprStmt ExprStmt;
 
 typedef struct IdentExpr IdentExpr;
 typedef struct IntExpr IntExpr;
+typedef struct BoolExpr BoolExpr;
 typedef struct PrefixExpr PrefixExpr;
 typedef struct InfixExpr InfixExpr;
 
@@ -44,17 +46,20 @@ ReturnStmt* mkReturnStmt(void);
 ExprStmt* mkExprStmt(void);
 IdentExpr* mkIdentExpr(void);
 IntExpr* mkIntExpr(void);
+BoolExpr* mkBoolExpr(void);
 PrefixExpr* mkPrefixExpr(void);
 InfixExpr* mkInfixExpr(void);
 
 void freeProgram(Program*);
 void freeStmt(Stmt*);
 void freeExpr(Expr*);
+void freeExprWithoutSelf(Expr*);
 void freeLetStmt(LetStmt*);
 void freeReturnStmt(ReturnStmt*);
 void freeExprStmt(ExprStmt*);
 void freeIdentExpr(IdentExpr*);
 void freeIntExpr(IntExpr*);
+void freeBoolExpr(BoolExpr*);
 void freePrefixExpr(PrefixExpr*);
 void freeInfixExpr(InfixExpr*);
 
@@ -66,6 +71,7 @@ String* stringifyReturnStmt(ReturnStmt*);
 String* stringifyExprStmt(ExprStmt*);
 String* stringifyIdentExpr(IdentExpr*);
 String* stringifyIntExpr(IntExpr*);
+String* stringifyBoolExpr(BoolExpr*);
 String* stringifyPrefixExpr(PrefixExpr*);
 String* stringifyInfixExpr(InfixExpr*);
 
@@ -111,6 +117,7 @@ struct Expr
         uintptr_t checkIsNull; // To make it zero initizlize
         IdentExpr* identExpr;
         IntExpr* intExpr;
+        BoolExpr* boolExpr;
         PrefixExpr* prefixExpr;
         InfixExpr* infixExpr;
     } inner;
@@ -144,16 +151,21 @@ struct IntExpr
     int64_t value;
 };
 
+struct BoolExpr
+{
+    int value;
+};
+
 struct PrefixExpr
 {
-    String* operator;
+    String* opt;
     Expr* right;
 };
 
 struct InfixExpr
 {
     Expr* left;
-    String* operator;
+    String* opt;
     Expr* right;
 };
 

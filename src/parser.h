@@ -30,7 +30,7 @@ typedef enum
     CALL_PREC,
 } Precedence;
 
-typedef void (*PrefixParseFn)(Parser*, Expr* output);
+typedef void (*PrefixParseFn)(Parser*, Expr** output);
 typedef void (*InfixParseFn)(Parser*, Expr* output, Expr* left);
 
 void peekError(Parser*, TokenType);
@@ -49,9 +49,11 @@ void parseExprStmt(Parser*, Stmt*);
 void parseExpr(Parser*, Expr**, Precedence);
 
 // PrefixParseFn functions
-void parseIdentExpr(Parser*, Expr*);
-void parseIntExpr(Parser*, Expr*);
-void parsePrefixExpr(Parser*, Expr*);
+void parseIdentExpr(Parser*, Expr**);
+void parseIntExpr(Parser*, Expr**);
+void parseBoolExpr(Parser*, Expr**);
+void parsePrefixExpr(Parser*, Expr**);
+void parseGroupedExpr(Parser*, Expr**);
 
 // InfixParseFn functions
 void parseInfixExpr(Parser*, Expr*, Expr*);

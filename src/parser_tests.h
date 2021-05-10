@@ -42,7 +42,7 @@
 
 /* Function Signatures */
 int testLetStatement(Stmt*, const char*);
-int testIntegerLiteral(Expr*, int64_t);
+int testLiteral(Expr*, int64_t);
 
 ///////////////////////////////////////////////////////////////////////
 /////////    Main Parser Test Case Impls    ///////////////////////////
@@ -225,11 +225,13 @@ TEST(TestPrefixExprs)
     struct
     {
         const char* input;
-        const char* operator;
+        const char* opt;
         int64_t intValue;
     } prefixTests[] = {
         {"!5;", "!", 5},
         {"-15;", "-", 15},
+        {"!true;", "!", TRUE},
+        {"!false;", "!", FALSE},
     };
 
 #define tt prefixTests[i]
@@ -257,16 +259,16 @@ TEST(TestPrefixExprs)
         }
         prefixExpr = expr->inner.prefixExpr;
 
-        if (cmpStringStr(prefixExpr->operator, tt.operator) != 0)
+        if (cmpStringStr(prefixExpr->opt, tt.opt) != 0)
         {
-            PRINT_ERR("prefixExpr->operator is not `%s`. got = `%s`",
-                      tt.operator, getStr(prefixExpr->operator));
+            PRINT_ERR("prefixExpr->opt is not `%s`. got = `%s`", tt.opt,
+                      getStr(prefixExpr->opt));
             freeStmt(stmt);
             testStatus = TEST_FAILED;
             goto EXIT_IF_FAILED;
         }
 
-        if (!testIntegerLiteral(prefixExpr->right, tt.intValue))
+        if (!testLiteral(prefixExpr->right, tt.intValue))
         {
             freeStmt(stmt);
             testStatus = TEST_FAILED;
@@ -299,16 +301,25 @@ TEST(TestInfixExprs)
     {
         const char* input;
         int64_t leftValue;
-        const char* operator;
+        const char* opt;
         int64_t rightValue;
     } infixTests[] = {
-        {"5 + 5;", 5, "+", 5},   {"5 - 5;", 5, "-", 5},   {"5 * 5;", 5, "*", 5},
-        {"5 / 5;", 5, "/", 5},   {"5 > 5;", 5, ">", 5},   {"5 < 5;", 5, "<", 5},
-        {"5 == 5;", 5, "==", 5}, {"5 != 5;", 5, "!=", 5},
+        {"5 + 5;", 5, "+", 5},
+        {"5 - 5;", 5, "-", 5},
+        {"5 * 5;", 5, "*", 5},
+        {"5 / 5;", 5, "/", 5},
+        {"5 > 5;", 5, ">", 5},
+        {"5 < 5;", 5, "<", 5},
+        {"5 == 5;", 5, "==", 5},
+        {"5 != 5;", 5, "!=", 5},
+        {"true == true", TRUE, "==", TRUE},
+        {"true != false", TRUE, "!=", FALSE},
+        {"false == false", FALSE, "==", FALSE},
+        {NULL, 0, NULL, 0},
     };
 
 #define tt infixTests[i]
-    for (int i = 0; i < 8; ++i)
+    for (int i = 0; tt.input; ++i)
     {
         MAKE_PARSER2(tt.input, 1);
 
@@ -332,23 +343,23 @@ TEST(TestInfixExprs)
         }
         infixExpr = expr->inner.infixExpr;
 
-        if (!testIntegerLiteral(infixExpr->right, tt.leftValue))
+        if (!testLiteral(infixExpr->left, tt.leftValue))
         {
             freeStmt(stmt);
             testStatus = TEST_FAILED;
             goto EXIT_IF_FAILED;
         }
 
-        if (cmpStringStr(infixExpr->operator, tt.operator) != 0)
+        if (cmpStringStr(infixExpr->opt, tt.opt) != 0)
         {
-            PRINT_ERR("infixExpr->operator is not `%s`. got = `%s`",
-                      tt.operator, getStr(infixExpr->operator));
+            PRINT_ERR("infixExpr->opt is not `%s`. got = `%s`", tt.opt,
+                      getStr(infixExpr->opt));
             freeStmt(stmt);
             testStatus = TEST_FAILED;
             goto EXIT_IF_FAILED;
         }
 
-        if (!testIntegerLiteral(infixExpr->right, tt.rightValue))
+        if (!testLiteral(infixExpr->right, tt.rightValue))
         {
             freeStmt(stmt);
             testStatus = TEST_FAILED;
@@ -433,6 +444,39 @@ TEST(TestOperatorPrecedenceParsing)
             "3 + 4 * 5 == 3 * 1 + 4 * 5",
             "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))",
         },
+        {"true", "true"},
+        {
+            "false",
+            "false",
+        },
+        {
+            "3 > 5 == false",
+            "((3 > 5) == false)",
+        },
+        {
+            "3 < 5 == true",
+            "((3 < 5) == true)",
+        },
+        {
+            "1 + (2 + 3) + 4",
+            "((1 + (2 + 3)) + 4)",
+        },
+        {
+            "(5 + 5) * 2",
+            "((5 + 5) * 2)",
+        },
+        {
+            "2 / (5 + 5)",
+            "(2 / (5 + 5))",
+        },
+        {
+            "-(5 + 5)",
+            "(-(5 + 5))",
+        },
+        {
+            "!(true == true)",
+            "(!(true == true))",
+        },
         {NULL, NULL},
     };
 
@@ -508,7 +552,7 @@ int testLetStatement(Stmt* stmt, const char* name)
     return TRUE;
 }
 
-int testIntegerLiteral(Expr* expr, int64_t value)
+int testLiteral(Expr* expr, int64_t value)
 {
     if (!expr)
     {
@@ -516,18 +560,31 @@ int testIntegerLiteral(Expr* expr, int64_t value)
         return FALSE;
     }
 
-    if (expr->type != EXPR_INTEGER)
+    switch (expr->type)
     {
-        PRINT_ERR(
-            "expr->type in testIntegerLiteral is not EXPR_INTEGER. got = %d",
-            expr->type);
-        return FALSE;
-    }
+    case EXPR_INTEGER:
+        if (expr->inner.intExpr->value != (int)value)
+        {
+            PRINT_ERR("given IntExpr is not %lld. got = %lld", value,
+                      expr->inner.intExpr->value);
+            return FALSE;
+        }
+        break;
 
-    if (expr->inner.intExpr->value != value)
-    {
-        PRINT_ERR("given IntExpr not %lld. got = %lld", value,
-                  expr->inner.intExpr->value);
+    case EXPR_BOOL:
+        if (expr->inner.boolExpr->value != value)
+        {
+            PRINT_ERR("given BoolExpr is not `%s`. got = %s",
+                      value ? "true" : "false",
+                      expr->inner.boolExpr->value ? "true" : "false");
+            return FALSE;
+        }
+        break;
+
+    default:
+        PRINT_ERR("expr->type in testLiteral is neither EXPR_INTEGER nor "
+                  "EXPR_BOOL. got = %d",
+                  expr->type);
         return FALSE;
     }
 

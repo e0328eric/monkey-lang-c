@@ -95,11 +95,20 @@ IntExpr* mkIntExpr(void)
     return output;
 }
 
+BoolExpr* mkBoolExpr(void)
+{
+    BoolExpr* output = malloc(sizeof(BoolExpr));
+
+    output->value = 0;
+
+    return output;
+}
+
 PrefixExpr* mkPrefixExpr(void)
 {
     PrefixExpr* output = malloc(sizeof(PrefixExpr));
 
-    output->operator= NULL;
+    output->opt = NULL;
     output->right = mkExpr();
 
     return output;
@@ -110,7 +119,7 @@ InfixExpr* mkInfixExpr(void)
     InfixExpr* output = malloc(sizeof(InfixExpr));
 
     output->left = NULL;
-    output->operator= NULL;
+    output->opt = NULL;
     output->right = mkExpr();
 
     return output;
@@ -164,7 +173,7 @@ void freeStmt(Stmt* pStmt)
     free(pStmt);
 }
 
-void freeExpr(Expr* pExpr)
+void freeExprWithoutSelf(Expr* pExpr)
 {
     if (!pExpr)
         return;
@@ -177,6 +186,10 @@ void freeExpr(Expr* pExpr)
 
     case EXPR_INTEGER:
         freeIntExpr(pExpr->inner.intExpr);
+        break;
+
+    case EXPR_BOOL:
+        freeBoolExpr(pExpr->inner.boolExpr);
         break;
 
     case EXPR_PREFIX:
@@ -194,7 +207,14 @@ void freeExpr(Expr* pExpr)
         UNDEFINED_OBJECT_FOUND("Expr");
         break;
     }
+}
 
+void freeExpr(Expr* pExpr)
+{
+    if (!pExpr)
+        return;
+
+    freeExprWithoutSelf(pExpr);
     free(pExpr);
 }
 
@@ -247,12 +267,20 @@ void freeIntExpr(IntExpr* pIntExpr)
     free(pIntExpr);
 }
 
+void freeBoolExpr(BoolExpr* pBoolExpr)
+{
+    if (!pBoolExpr)
+        return;
+
+    free(pBoolExpr);
+}
+
 void freePrefixExpr(PrefixExpr* pPrefixExpr)
 {
     if (!pPrefixExpr)
         return;
 
-    freeString(pPrefixExpr->operator);
+    freeString(pPrefixExpr->opt);
     freeExpr(pPrefixExpr->right);
     free(pPrefixExpr);
 }
@@ -263,7 +291,7 @@ void freeInfixExpr(InfixExpr* pInfixExpr)
         return;
 
     freeExpr(pInfixExpr->left);
-    freeString(pInfixExpr->operator);
+    freeString(pInfixExpr->opt);
     freeExpr(pInfixExpr->right);
     free(pInfixExpr);
 }
@@ -328,6 +356,10 @@ String* stringifyExpr(Expr* pExpr)
 
     case EXPR_INTEGER:
         output = stringifyIntExpr(pExpr->inner.intExpr);
+        break;
+
+    case EXPR_BOOL:
+        output = stringifyBoolExpr(pExpr->inner.boolExpr);
         break;
 
     case EXPR_PREFIX:
@@ -400,13 +432,21 @@ String* stringifyIntExpr(IntExpr* pIntExpr)
     return mkString(buffer);
 }
 
+String* stringifyBoolExpr(BoolExpr* pBoolExpr)
+{
+    if (!pBoolExpr)
+        return NULL;
+
+    return mkString(pBoolExpr->value != 0 ? "true" : "false");
+}
+
 String* stringifyPrefixExpr(PrefixExpr* pPrefixExpr)
 {
     if (!pPrefixExpr)
         return NULL;
 
     String* output = mkString("(");
-    concatString(output, pPrefixExpr->operator);
+    concatString(output, pPrefixExpr->opt);
     concatFreeString(output, stringifyExpr(pPrefixExpr->right));
     appendChar(output, ')');
 
@@ -421,7 +461,7 @@ String* stringifyInfixExpr(InfixExpr* pInfixExpr)
     String* output = mkString("(");
     concatFreeString(output, stringifyExpr(pInfixExpr->left));
     appendChar(output, ' ');
-    concatString(output, pInfixExpr->operator);
+    concatString(output, pInfixExpr->opt);
     appendChar(output, ' ');
     concatFreeString(output, stringifyExpr(pInfixExpr->right));
     appendChar(output, ')');

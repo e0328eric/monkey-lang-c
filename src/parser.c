@@ -25,34 +25,34 @@
     }
 
 const PrefixParseFn prefixParseFns[] = {
-    NULL,            // T_EOF = 0
-    parseIdentExpr,  // T_IDENT
-    parseIntExpr,    // T_INT
-    NULL,            // T_ASSIGN
-    NULL,            // T_PLUS
-    parsePrefixExpr, // T_MINUS
-    parsePrefixExpr, // T_BANG
-    NULL,            // T_ASTERISK
-    NULL,            // T_LT
-    NULL,            // T_GT
-    NULL,            // T_EQ
-    NULL,            // T_NOT_EQ
-    NULL,            // T_SLASH
-    NULL,            // T_COMMA
-    NULL,            // T_SEMICOLON
-    NULL,            // T_LPAREN
-    NULL,            // T_RPAREN
-    NULL,            // T_LBRACE
-    NULL,            // T_RBRACE
-    NULL,            // T_LET
-    NULL,            // T_FUNCTION
-    NULL,            // T_IF
-    NULL,            // T_ELSE
-    NULL,            // T_TRUE
-    NULL,            // T_FALSE
-    NULL,            // T_RETURN
-    NULL,            // T_ZERO
-    NULL,            // T_ILLEGAL
+    NULL,             // T_EOF = 0
+    parseIdentExpr,   // T_IDENT
+    parseIntExpr,     // T_INT
+    NULL,             // T_ASSIGN
+    NULL,             // T_PLUS
+    parsePrefixExpr,  // T_MINUS
+    parsePrefixExpr,  // T_BANG
+    NULL,             // T_ASTERISK
+    NULL,             // T_LT
+    NULL,             // T_GT
+    NULL,             // T_EQ
+    NULL,             // T_NOT_EQ
+    NULL,             // T_SLASH
+    NULL,             // T_COMMA
+    NULL,             // T_SEMICOLON
+    parseGroupedExpr, // T_LPAREN
+    NULL,             // T_RPAREN
+    NULL,             // T_LBRACE
+    NULL,             // T_RBRACE
+    NULL,             // T_LET
+    NULL,             // T_FUNCTION
+    NULL,             // T_IF
+    NULL,             // T_ELSE
+    parseBoolExpr,    // T_TRUE
+    parseBoolExpr,    // T_FALSE
+    NULL,             // T_RETURN
+    NULL,             // T_ZERO
+    NULL,             // T_ILLEGAL
 };
 
 const InfixParseFn infixParseFns[] = {
@@ -256,7 +256,7 @@ void parseExpr(Parser* p, Expr** pExpr, Precedence prec)
         (*pExpr)->inner.checkIsNull = 0;
         return;
     }
-    prefix(p, *pExpr);
+    prefix(p, pExpr);
 
     while (!peekTokenIs(p, T_SEMICOLON) && prec < peekPrecedence(p))
     {
@@ -272,35 +272,60 @@ void parseExpr(Parser* p, Expr** pExpr, Precedence prec)
     }
 }
 
-void parseIdentExpr(Parser* p, Expr* expr)
+void parseIdentExpr(Parser* p, Expr** expr)
 {
-    ASSERT(expr);
+    ASSERT(expr && *expr);
 
-    expr->type = EXPR_IDENT;
-    expr->inner.identExpr = mkIdentExpr();
-    expr->inner.identExpr->value = mkString(getStr(p->curToken.literal));
+    (*expr)->type = EXPR_IDENT;
+    (*expr)->inner.identExpr = mkIdentExpr();
+    (*expr)->inner.identExpr->value = mkString(getStr(p->curToken.literal));
 }
 
-void parseIntExpr(Parser* p, Expr* expr)
+void parseIntExpr(Parser* p, Expr** expr)
 {
-    ASSERT(expr);
+    ASSERT(expr && *expr);
 
-    expr->type = EXPR_INTEGER;
-    expr->inner.intExpr = mkIntExpr();
-    expr->inner.intExpr->value = atoll(getStr(p->curToken.literal));
+    (*expr)->type = EXPR_INTEGER;
+    (*expr)->inner.intExpr = mkIntExpr();
+    (*expr)->inner.intExpr->value = atoll(getStr(p->curToken.literal));
 }
 
-void parsePrefixExpr(Parser* p, Expr* expr)
+void parseBoolExpr(Parser* p, Expr** expr)
 {
-    ASSERT(expr);
+    ASSERT(expr && *expr);
 
-    expr->type = EXPR_PREFIX;
-    expr->inner.prefixExpr = mkPrefixExpr();
-    expr->inner.prefixExpr->operator= mkString(getStr(p->curToken.literal));
+    (*expr)->type = EXPR_BOOL;
+    (*expr)->inner.boolExpr = mkBoolExpr();
+    (*expr)->inner.boolExpr->value = curTokenIs(p, T_TRUE);
+}
+
+void parsePrefixExpr(Parser* p, Expr** expr)
+{
+    ASSERT(expr && *expr);
+
+    (*expr)->type = EXPR_PREFIX;
+    (*expr)->inner.prefixExpr = mkPrefixExpr();
+    (*expr)->inner.prefixExpr->opt = mkString(getStr(p->curToken.literal));
 
     takeToken(p);
 
-    parseExpr(p, &expr->inner.prefixExpr->right, PREFIX_PREC);
+    parseExpr(p, &(*expr)->inner.prefixExpr->right, PREFIX_PREC);
+}
+
+void parseGroupedExpr(Parser* p, Expr** expr)
+{
+    ASSERT(expr && *expr);
+
+    takeToken(p);
+
+    parseExpr(p, expr, LOWEST_PREC);
+
+    if (!expectPeek(p, T_RPAREN))
+    {
+        freeExprWithoutSelf(*expr);
+        (*expr)->type = EMPTY_EXPR;
+        (*expr)->inner.checkIsNull = 0;
+    }
 }
 
 void parseInfixExpr(Parser* p, Expr* output, Expr* left)
@@ -310,7 +335,7 @@ void parseInfixExpr(Parser* p, Expr* output, Expr* left)
     output->type = EXPR_INFIX;
     output->inner.infixExpr = mkInfixExpr();
     output->inner.infixExpr->left = left;
-    output->inner.infixExpr->operator= mkString(getStr(p->curToken.literal));
+    output->inner.infixExpr->opt = mkString(getStr(p->curToken.literal));
 
     Precedence prec = curPrecedence(p);
     takeToken(p);
