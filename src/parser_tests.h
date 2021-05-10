@@ -81,8 +81,8 @@ TEST(TestLetStmts)
 #undef tt
 
 EXIT_IF_FAILED:
-    //    freeProgram(program);
-    //    freeParser(p);
+    freeProgram(program);
+    freeParser(p);
     return testStatus;
 }
 
