@@ -56,35 +56,60 @@ const PrefixParseFn prefixParseFns[] = {
 };
 
 const InfixParseFn infixParseFns[] = {
-    NULL, // T_EOF
-    NULL, // T_IDENT
-    NULL, // T_INT
-    NULL, // T_ASSIGN
-    NULL, // T_PLUS
-    NULL, // T_MINUS
-    NULL, // T_BANG
-    NULL, // T_ASTERISK
-    NULL, // T_LT
-    NULL, // T_GT
-    NULL, // T_EQ
-    NULL, // T_NOT_EQ
-    NULL, // T_SLASH
-    NULL, // T_COMMA
-    NULL, // T_SEMICOLON
-    NULL, // T_LPAREN
-    NULL, // T_RPAREN
-    NULL, // T_LBRACE
-    NULL, // T_RBRACE
-    NULL, // T_LET
-    NULL, // T_FUNCTION
-    NULL, // T_IF
-    NULL, // T_ELSE
-    NULL, // T_TRUE
-    NULL, // T_FALSE
-    NULL, // T_RETURN
-    NULL, // T_ZERO
-    NULL, // T_ILLEGAL
+    NULL,           // T_EOF = 0
+    NULL,           // T_IDENT
+    NULL,           // T_INT
+    NULL,           // T_ASSIGN
+    parseInfixExpr, // T_PLUS
+    parseInfixExpr, // T_MINUS
+    NULL,           // T_BANG
+    parseInfixExpr, // T_ASTERISK
+    parseInfixExpr, // T_LT
+    parseInfixExpr, // T_GT
+    parseInfixExpr, // T_EQ
+    parseInfixExpr, // T_NOT_EQ
+    parseInfixExpr, // T_SLASH
+    NULL,           // T_COMMA
+    NULL,           // T_SEMICOLON
+    NULL,           // T_LPAREN
+    NULL,           // T_RPAREN
+    NULL,           // T_LBRACE
+    NULL,           // T_RBRACE
+    NULL,           // T_LET
+    NULL,           // T_FUNCTION
+    NULL,           // T_IF
+    NULL,           // T_ELSE
+    NULL,           // T_TRUE
+    NULL,           // T_FALSE
+    NULL,           // T_RETURN
+    NULL,           // T_ZERO
+    NULL,           // T_ILLEGAL
 };
+
+inline Precedence takePrec(TokenType tokType)
+{
+    switch (tokType)
+    {
+    case T_EQ:
+    case T_NOT_EQ:
+        return EQ_PREC;
+
+    case T_LT:
+    case T_GT:
+        return CMP_PREC;
+
+    case T_PLUS:
+    case T_MINUS:
+        return SUM_PREC;
+
+    case T_SLASH:
+    case T_ASTERISK:
+        return PRODUCT_PREC;
+
+    default:
+        return LOWEST_PREC;
+    }
+}
 
 struct Parser
 {
@@ -99,6 +124,8 @@ Parser* mkParser(Lexer* l)
 {
     Parser* output = malloc(sizeof(Parser));
     output->l = l;
+    output->curToken = INIT_TOKEN;
+    output->peekToken = INIT_TOKEN;
     output->errors = NULL;
     output->errLen = 0;
 
@@ -126,6 +153,7 @@ void freeParser(Parser* p)
     free(p);
 }
 
+// Main Part of the Parser of Monkey language
 Program* parseProgram(Parser* p)
 {
     Program* program = mkProgram();
@@ -207,7 +235,7 @@ void parseExprStmt(Parser* p, Stmt* stmt)
     ASSERT(stmt);
 
     ExprStmt* exprStmt = mkExprStmt();
-    parseExpr(p, exprStmt->expression, LOWEST_PREC);
+    parseExpr(p, &exprStmt->expression, LOWEST_PREC);
 
     if (peekTokenIs(p, T_SEMICOLON))
         takeToken(p);
@@ -215,19 +243,33 @@ void parseExprStmt(Parser* p, Stmt* stmt)
     stmt->inner.exprStmt = exprStmt;
 }
 
-void parseExpr(Parser* p, Expr* expr, Precedence prec)
+void parseExpr(Parser* p, Expr** pExpr, Precedence prec)
 {
-    ASSERT(expr);
+    ASSERT(pExpr && *pExpr);
+
+    Expr* leftExpr = NULL;
 
     PrefixParseFn prefix = prefixParseFns[p->curToken.type];
     if (!prefix)
     {
         noPrefixParseFnError(p, p->curToken.type);
-        expr->inner.checkIsNull = 0;
+        (*pExpr)->inner.checkIsNull = 0;
         return;
     }
+    prefix(p, *pExpr);
 
-    prefix(p, expr);
+    while (!peekTokenIs(p, T_SEMICOLON) && prec < peekPrecedence(p))
+    {
+        InfixParseFn infix = infixParseFns[p->peekToken.type];
+        if (!infix)
+            return;
+
+        takeToken(p);
+
+        leftExpr = *pExpr;
+        *pExpr = mkExpr();
+        infix(p, *pExpr, leftExpr);
+    }
 }
 
 void parseIdentExpr(Parser* p, Expr* expr)
@@ -258,9 +300,27 @@ void parsePrefixExpr(Parser* p, Expr* expr)
 
     takeToken(p);
 
-    parseExpr(p, expr->inner.prefixExpr->right, PREFIX_PREC);
+    parseExpr(p, &expr->inner.prefixExpr->right, PREFIX_PREC);
 }
 
+void parseInfixExpr(Parser* p, Expr* output, Expr* left)
+{
+    ASSERT(output && left);
+
+    output->type = EXPR_INFIX;
+    output->inner.infixExpr = mkInfixExpr();
+    output->inner.infixExpr->left = left;
+    output->inner.infixExpr->operator= mkString(getStr(p->curToken.literal));
+
+    Precedence prec = curPrecedence(p);
+    takeToken(p);
+    parseExpr(p, &output->inner.infixExpr->right, prec);
+}
+
+////////////////////////////////////////// // END OF MAIN PARSER IMPLEMENTATION
+
+// Helper functions to implementing the parser such as emitting error messages
+// and peeking tokens from the lexer etc.
 String** getErrors(Parser* p)
 {
     String** output = p->errors;
@@ -334,3 +394,7 @@ int expectPeek(Parser* p, TokenType tokType)
     peekError(p, tokType);
     return FALSE;
 }
+
+Precedence curPrecedence(Parser* p) { return takePrec(p->curToken.type); }
+
+Precedence peekPrecedence(Parser* p) { return takePrec(p->peekToken.type); }

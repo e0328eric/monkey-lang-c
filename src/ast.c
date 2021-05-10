@@ -80,22 +80,39 @@ ExprStmt* mkExprStmt(void)
 IdentExpr* mkIdentExpr(void)
 {
     IdentExpr* output = malloc(sizeof(IdentExpr));
+
     output->value = NULL;
+
     return output;
 }
 
 IntExpr* mkIntExpr(void)
 {
     IntExpr* output = malloc(sizeof(IntExpr));
+
     output->value = 0;
+
     return output;
 }
 
 PrefixExpr* mkPrefixExpr(void)
 {
     PrefixExpr* output = malloc(sizeof(PrefixExpr));
+
     output->operator= NULL;
     output->right = mkExpr();
+
+    return output;
+}
+
+InfixExpr* mkInfixExpr(void)
+{
+    InfixExpr* output = malloc(sizeof(InfixExpr));
+
+    output->left = NULL;
+    output->operator= NULL;
+    output->right = mkExpr();
+
     return output;
 }
 
@@ -166,6 +183,10 @@ void freeExpr(Expr* pExpr)
         freePrefixExpr(pExpr->inner.prefixExpr);
         break;
 
+    case EXPR_INFIX:
+        freeInfixExpr(pExpr->inner.infixExpr);
+        break;
+
     case EMPTY_EXPR:
         break;
 
@@ -234,6 +255,17 @@ void freePrefixExpr(PrefixExpr* pPrefixExpr)
     freeString(pPrefixExpr->operator);
     freeExpr(pPrefixExpr->right);
     free(pPrefixExpr);
+}
+
+void freeInfixExpr(InfixExpr* pInfixExpr)
+{
+    if (!pInfixExpr)
+        return;
+
+    freeExpr(pInfixExpr->left);
+    freeString(pInfixExpr->operator);
+    freeExpr(pInfixExpr->right);
+    free(pInfixExpr);
 }
 
 /* Implementing Stringify */
@@ -372,6 +404,22 @@ String* stringifyPrefixExpr(PrefixExpr* pPrefixExpr)
     String* output = mkString("(");
     concatString(output, pPrefixExpr->operator);
     concatFreeString(output, stringifyExpr(pPrefixExpr->right));
+    appendChar(output, ')');
+
+    return output;
+}
+
+String* stringifyInfixExpr(InfixExpr* pInfixExpr)
+{
+    if (!pInfixExpr)
+        return NULL;
+
+    String* output = mkString("(");
+    concatFreeString(output, stringifyExpr(pInfixExpr->left));
+    appendChar(output, ' ');
+    concatString(output, pInfixExpr->operator);
+    appendChar(output, ' ');
+    concatFreeString(output, stringifyExpr(pInfixExpr->right));
     appendChar(output, ')');
 
     return output;

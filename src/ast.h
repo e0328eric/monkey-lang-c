@@ -20,6 +20,7 @@ typedef enum
     EXPR_IDENT,
     EXPR_INTEGER,
     EXPR_PREFIX,
+    EXPR_INFIX,
 } ExprType;
 
 typedef struct Program Program;
@@ -33,6 +34,7 @@ typedef struct ExprStmt ExprStmt;
 typedef struct IdentExpr IdentExpr;
 typedef struct IntExpr IntExpr;
 typedef struct PrefixExpr PrefixExpr;
+typedef struct InfixExpr InfixExpr;
 
 Program* mkProgram(void);
 Stmt* mkStmt(void);
@@ -43,6 +45,7 @@ ExprStmt* mkExprStmt(void);
 IdentExpr* mkIdentExpr(void);
 IntExpr* mkIntExpr(void);
 PrefixExpr* mkPrefixExpr(void);
+InfixExpr* mkInfixExpr(void);
 
 void freeProgram(Program*);
 void freeStmt(Stmt*);
@@ -53,6 +56,7 @@ void freeExprStmt(ExprStmt*);
 void freeIdentExpr(IdentExpr*);
 void freeIntExpr(IntExpr*);
 void freePrefixExpr(PrefixExpr*);
+void freeInfixExpr(InfixExpr*);
 
 String* stringifyProgram(Program*);
 String* stringifyStmt(Stmt*);
@@ -63,6 +67,7 @@ String* stringifyExprStmt(ExprStmt*);
 String* stringifyIdentExpr(IdentExpr*);
 String* stringifyIntExpr(IntExpr*);
 String* stringifyPrefixExpr(PrefixExpr*);
+String* stringifyInfixExpr(InfixExpr*);
 
 void pushStmt(Program*, Stmt**);
 Stmt* popStmt(Program*);
@@ -91,7 +96,7 @@ struct Stmt
     StmtType type;
     union
     {
-        int checkIsNull; // To make it zero initizlize
+        uintptr_t checkIsNull; // To make it zero initizlize
         LetStmt* letStmt;
         ReturnStmt* returnStmt;
         ExprStmt* exprStmt;
@@ -103,10 +108,11 @@ struct Expr
     ExprType type;
     union
     {
-        int checkIsNull; // To make it zero initizlize
+        uintptr_t checkIsNull; // To make it zero initizlize
         IdentExpr* identExpr;
         IntExpr* intExpr;
         PrefixExpr* prefixExpr;
+        InfixExpr* infixExpr;
     } inner;
 };
 
@@ -140,6 +146,13 @@ struct IntExpr
 
 struct PrefixExpr
 {
+    String* operator;
+    Expr* right;
+};
+
+struct InfixExpr
+{
+    Expr* left;
     String* operator;
     Expr* right;
 };

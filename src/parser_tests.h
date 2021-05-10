@@ -146,7 +146,7 @@ TEST(TestIdentExprs)
     }
     if (expr->type != EXPR_IDENT)
     {
-        PRINT_ERR("expr->inner is not EXPR_IDENT. got = %d", expr->type);
+        PRINT_ERR("expr->inner is not %d. got = %d", EXPR_IDENT, expr->type);
         freeStmt(stmt);
         testStatus = TEST_FAILED;
         goto EXIT_IF_FAILED;
@@ -192,7 +192,7 @@ TEST(TestIntegerLiteralExprs)
     }
     if (expr->type != EXPR_INTEGER)
     {
-        PRINT_ERR("expr->inner is not EXPR_INTEGER. got = %d", expr->type);
+        PRINT_ERR("expr->inner is not %d. got = %d", EXPR_INTEGER, expr->type);
         freeStmt(stmt);
         testStatus = TEST_FAILED;
         goto EXIT_IF_FAILED;
@@ -249,7 +249,8 @@ TEST(TestPrefixExprs)
         }
         if (expr->type != EXPR_PREFIX)
         {
-            PRINT_ERR("expr->inner is not EXPR_PREFIX. got = %d", expr->type);
+            PRINT_ERR("expr->inner is not %d. got = %d", EXPR_PREFIX,
+                      expr->type);
             freeStmt(stmt);
             testStatus = TEST_FAILED;
             goto EXIT_IF_FAILED;
@@ -286,6 +287,91 @@ TEST(TestPrefixExprs)
 
     return testStatus;
 }
+
+TEST(TestInfixExprs)
+{
+    static int testStatus = TEST_SUCESSED;
+
+    Stmt* stmt = NULL;
+    Expr* expr = NULL;
+    InfixExpr* infixExpr = NULL;
+    struct
+    {
+        const char* input;
+        int64_t leftValue;
+        const char* operator;
+        int64_t rightValue;
+    } infixTests[] = {
+        {"5 + 5;", 5, "+", 5},   {"5 - 5;", 5, "-", 5},   {"5 * 5;", 5, "*", 5},
+        {"5 / 5;", 5, "/", 5},   {"5 > 5;", 5, ">", 5},   {"5 < 5;", 5, "<", 5},
+        {"5 == 5;", 5, "==", 5}, {"5 != 5;", 5, "!=", 5},
+    };
+
+#define tt infixTests[i]
+    for (int i = 0; i < 8; ++i)
+    {
+        MAKE_PARSER2(tt.input, 1);
+
+        stmt = popStmt(program);
+        expr = stmt->inner.exprStmt->expression;
+
+        if (!expr)
+        {
+            PRINT_ERR("expr is NULL", NULL);
+            freeStmt(stmt);
+            testStatus = TEST_FAILED;
+            goto EXIT_IF_FAILED;
+        }
+        if (expr->type != EXPR_INFIX)
+        {
+            PRINT_ERR("expr->inner is not %d. got = %d", EXPR_INFIX,
+                      expr->type);
+            freeStmt(stmt);
+            testStatus = TEST_FAILED;
+            goto EXIT_IF_FAILED;
+        }
+        infixExpr = expr->inner.infixExpr;
+
+        if (!testIntegerLiteral(infixExpr->right, tt.leftValue))
+        {
+            freeStmt(stmt);
+            testStatus = TEST_FAILED;
+            goto EXIT_IF_FAILED;
+        }
+
+        if (cmpStringStr(infixExpr->operator, tt.operator) != 0)
+        {
+            PRINT_ERR("infixExpr->operator is not `%s`. got = `%s`",
+                      tt.operator, getStr(infixExpr->operator));
+            freeStmt(stmt);
+            testStatus = TEST_FAILED;
+            goto EXIT_IF_FAILED;
+        }
+
+        if (!testIntegerLiteral(infixExpr->right, tt.rightValue))
+        {
+            freeStmt(stmt);
+            testStatus = TEST_FAILED;
+            goto EXIT_IF_FAILED;
+        }
+
+        freeStmt(stmt);
+        freeProgram(program);
+        freeParser(p);
+        continue;
+
+    EXIT_IF_FAILED:
+        freeProgram(program);
+        freeParser(p);
+        break;
+    }
+#undef tt
+
+    return testStatus;
+}
+
+///////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////
 
 #ifndef _MONKEY_PARSER_TEST_H_
 #define _MONKEY_PARSER_TEST_H_
@@ -350,6 +436,7 @@ MAIN_TEST(
         RUN_TEST(TestIdentExprs);
         RUN_TEST(TestIntegerLiteralExprs);
         RUN_TEST(TestPrefixExprs);
+        RUN_TEST(TestInfixExprs);
     })
 
 #undef MAIN_TEST_NAME // End TestParser

@@ -38,18 +38,23 @@ void noPrefixParseFnError(Parser*, TokenType);
 int curTokenIs(Parser*, TokenType);
 int peekTokenIs(Parser*, TokenType);
 int expectPeek(Parser*, TokenType);
+Precedence curPrecedence(Parser*);
+Precedence peekPrecedence(Parser*);
 
 Stmt* parseStmt(Parser*);
 void parseLetStmt(Parser*, Stmt*);
 void parseReturnStmt(Parser*, Stmt*);
 void parseExprStmt(Parser*, Stmt*);
 
-void parseExpr(Parser*, Expr*, Precedence);
+void parseExpr(Parser*, Expr**, Precedence);
 
 // PrefixParseFn functions
 void parseIdentExpr(Parser*, Expr*);
 void parseIntExpr(Parser*, Expr*);
 void parsePrefixExpr(Parser*, Expr*);
+
+// InfixParseFn functions
+void parseInfixExpr(Parser*, Expr*, Expr*);
 
 #endif // __PRIVATE_PARSER_OBJECTS__
 
