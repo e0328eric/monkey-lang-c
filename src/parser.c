@@ -358,10 +358,12 @@ void parseIfExpr(Parser* p, Expr** expr)
 
     takeToken(p);
 
-    IfExpr* ifExpr = mkIfExpr();
-#define condition   ifExpr->condition
-#define consequence ifExpr->consequence
-#define alternative ifExpr->alternative
+    (*expr)->type = EXPR_IF;
+    (*expr)->inner.ifExpr = mkIfExpr();
+
+#define condition   (*expr)->inner.ifExpr->condition
+#define consequence (*expr)->inner.ifExpr->consequence
+#define alternative (*expr)->inner.ifExpr->alternative
 
     parseExpr(p, &condition, LOWEST_PREC);
 
@@ -383,9 +385,6 @@ void parseIfExpr(Parser* p, Expr** expr)
 #undef alternative
 #undef consequence
 #undef condition
-
-    (*expr)->type = EXPR_IF;
-    (*expr)->inner.ifExpr = ifExpr;
 }
 
 void parseInfixExpr(Parser* p, Expr* output, Expr* left)
