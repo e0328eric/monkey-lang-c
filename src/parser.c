@@ -24,6 +24,14 @@
         return;                                    \
     }
 
+#define EXPECT_PEEK_EXPR(tokType)       \
+    if (!expectPeek(p, tokType))        \
+    {                                   \
+        freeExprWithoutSelf(*expr);     \
+        (*expr)->type = EMPTY_EXPR;     \
+        (*expr)->inner.checkIsNull = 0; \
+    }
+
 const PrefixParseFn prefixParseFns[] = {
     NULL,             // T_EOF = 0
     parseIdentExpr,   // T_IDENT
@@ -46,7 +54,7 @@ const PrefixParseFn prefixParseFns[] = {
     NULL,             // T_RBRACE
     NULL,             // T_LET
     NULL,             // T_FUNCTION
-    NULL,             // T_IF
+    parseIfExpr,      // T_IF
     NULL,             // T_ELSE
     parseBoolExpr,    // T_TRUE
     parseBoolExpr,    // T_FALSE
@@ -243,6 +251,25 @@ void parseExprStmt(Parser* p, Stmt* stmt)
     stmt->inner.exprStmt = exprStmt;
 }
 
+void parseBlockStmt(Parser* p, BlockStmt* blockStmt)
+{
+    ASSERT(blockStmt);
+
+    Stmt* tmp = NULL;
+
+    takeToken(p);
+
+    while (!curTokenIs(p, T_RBRACE) && !curTokenIs(p, T_EOF))
+    {
+        tmp = parseStmt(p);
+        if (tmp->inner.checkIsNull != 0)
+            pushStmt((Program*)blockStmt, &tmp);
+        else
+            freeStmt(tmp);
+        takeToken(p);
+    }
+}
+
 void parseExpr(Parser* p, Expr** pExpr, Precedence prec)
 {
     ASSERT(pExpr && *pExpr);
@@ -320,12 +347,45 @@ void parseGroupedExpr(Parser* p, Expr** expr)
 
     parseExpr(p, expr, LOWEST_PREC);
 
-    if (!expectPeek(p, T_RPAREN))
+    EXPECT_PEEK_EXPR(T_RPAREN);
+}
+
+void parseIfExpr(Parser* p, Expr** expr)
+{
+    ASSERT(expr && *expr);
+
+    EXPECT_PEEK_EXPR(T_LPAREN);
+
+    takeToken(p);
+
+    IfExpr* ifExpr = mkIfExpr();
+#define condition   ifExpr->condition
+#define consequence ifExpr->consequence
+#define alternative ifExpr->alternative
+
+    parseExpr(p, &condition, LOWEST_PREC);
+
+    EXPECT_PEEK_EXPR(T_RPAREN);
+    EXPECT_PEEK_EXPR(T_LBRACE);
+
+    parseBlockStmt(p, consequence);
+
+    if (peekTokenIs(p, T_ELSE))
     {
-        freeExprWithoutSelf(*expr);
-        (*expr)->type = EMPTY_EXPR;
-        (*expr)->inner.checkIsNull = 0;
+        takeToken(p);
+
+        EXPECT_PEEK_EXPR(T_LBRACE);
+        alternative = mkBlockStmt();
+
+        parseBlockStmt(p, alternative);
     }
+
+#undef alternative
+#undef consequence
+#undef condition
+
+    (*expr)->type = EXPR_IF;
+    (*expr)->inner.ifExpr = ifExpr;
 }
 
 void parseInfixExpr(Parser* p, Expr* output, Expr* left)

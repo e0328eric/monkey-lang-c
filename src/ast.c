@@ -77,6 +77,8 @@ ExprStmt* mkExprStmt(void)
     return output;
 }
 
+BlockStmt* mkBlockStmt(void) { return (BlockStmt*)mkProgram(); }
+
 IdentExpr* mkIdentExpr(void)
 {
     IdentExpr* output = malloc(sizeof(IdentExpr));
@@ -125,6 +127,17 @@ InfixExpr* mkInfixExpr(void)
     return output;
 }
 
+IfExpr* mkIfExpr(void)
+{
+    IfExpr* output = malloc(sizeof(IfExpr));
+
+    output->condition = mkExpr();
+    output->consequence = mkBlockStmt();
+    output->alternative = NULL;
+
+    return output;
+}
+
 /* Implementing Destructors */
 void freeProgram(Program* pProg)
 {
@@ -160,6 +173,10 @@ void freeStmt(Stmt* pStmt)
 
     case STMT_EXPRESSION:
         freeExprStmt(pStmt->inner.exprStmt);
+        break;
+
+    case STMT_BLOCK:
+        freeBlockStmt(pStmt->inner.blockStmt);
         break;
 
     case EMPTY_STMT:
@@ -199,6 +216,9 @@ void freeExprWithoutSelf(Expr* pExpr)
     case EXPR_INFIX:
         freeInfixExpr(pExpr->inner.infixExpr);
         break;
+
+    case EXPR_IF:
+        freeIfExpr(pExpr->inner.ifExpr);
 
     case EMPTY_EXPR:
         break;
@@ -249,6 +269,8 @@ void freeExprStmt(ExprStmt* pExprStmt)
     free(pExprStmt);
 }
 
+void freeBlockStmt(BlockStmt* pBlockStmt) { freeProgram((Program*)pBlockStmt); }
+
 void freeIdentExpr(IdentExpr* pIdentExpr)
 {
     if (!pIdentExpr)
@@ -296,6 +318,17 @@ void freeInfixExpr(InfixExpr* pInfixExpr)
     free(pInfixExpr);
 }
 
+void freeIfExpr(IfExpr* pIfExpr)
+{
+    if (!pIfExpr)
+        return;
+
+    freeExpr(pIfExpr->condition);
+    freeBlockStmt(pIfExpr->consequence);
+    freeBlockStmt(pIfExpr->alternative);
+    free(pIfExpr);
+}
+
 /* Implementing Stringify */
 String* stringifyProgram(Program* pProg)
 {
@@ -334,6 +367,10 @@ String* stringifyStmt(Stmt* pStmt)
         output = stringifyExprStmt(pStmt->inner.exprStmt);
         break;
 
+    case STMT_BLOCK:
+        output = stringifyBlockStmt(pStmt->inner.blockStmt);
+        break;
+
     default:
         break;
     }
@@ -369,6 +406,9 @@ String* stringifyExpr(Expr* pExpr)
     case EXPR_INFIX:
         output = stringifyInfixExpr(pExpr->inner.infixExpr);
         break;
+
+    case EXPR_IF:
+        output = stringifyIfExpr(pExpr->inner.ifExpr);
 
     default:
         break;
@@ -411,6 +451,11 @@ String* stringifyExprStmt(ExprStmt* pExprStmt)
         return NULL;
 
     return stringifyExpr(pExprStmt->expression);
+}
+
+String* stringifyBlockStmt(BlockStmt* pBlockStmt)
+{
+    return stringifyProgram((Program*)pBlockStmt);
 }
 
 String* stringifyIdentExpr(IdentExpr* pIdentExpr)
@@ -465,6 +510,25 @@ String* stringifyInfixExpr(InfixExpr* pInfixExpr)
     appendChar(output, ' ');
     concatFreeString(output, stringifyExpr(pInfixExpr->right));
     appendChar(output, ')');
+
+    return output;
+}
+
+String* stringifyIfExpr(IfExpr* pIfExpr)
+{
+    if (!pIfExpr)
+        return NULL;
+
+    String* output = mkString("if ");
+    concatFreeString(output, stringifyExpr(pIfExpr->condition));
+    appendChar(output, ' ');
+    concatFreeString(output, stringifyBlockStmt(pIfExpr->consequence));
+
+    if (pIfExpr->alternative)
+    {
+        appendStr(output, "else ");
+        concatFreeString(output, stringifyBlockStmt(pIfExpr->alternative));
+    }
 
     return output;
 }

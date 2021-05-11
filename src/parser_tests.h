@@ -42,6 +42,7 @@
 
 /* Function Signatures */
 int testLetStatement(Stmt*, const char*);
+int testIdentExpr(Expr*, const char*);
 int testLiteral(Expr*, int64_t);
 
 ///////////////////////////////////////////////////////////////////////
@@ -521,6 +522,230 @@ TEST(TestOperatorPrecedenceParsing)
     return testStatus;
 }
 
+TEST(TestIfExprs)
+{
+    static int testStatus = TEST_SUCESSED;
+
+    Stmt* stmt = NULL;
+    Stmt* consequenceStmt = NULL;
+    Expr* expr = NULL;
+    Expr* consequence = NULL;
+    IfExpr* ifExpr = NULL;
+    String* gotString = NULL;
+
+    const char* input = "if (x < y) { x };";
+    MAKE_PARSER(1);
+
+    stmt = popStmt(program);
+
+    if (stmt->type != STMT_EXPRESSION)
+    {
+        PRINT_ERR("stmt->type is not %d. got = %d", STMT_EXPRESSION,
+                  stmt->type);
+        freeStmt(stmt);
+        testStatus = TEST_FAILED;
+        goto EXIT_IF_FAILED;
+    }
+
+    expr = stmt->inner.exprStmt->expression;
+    if (expr->type != EXPR_IF)
+    {
+        PRINT_ERR("expr->type is not %d. got = %d", EXPR_IF, expr->type);
+        freeStmt(stmt);
+        testStatus = TEST_FAILED;
+        goto EXIT_IF_FAILED;
+    }
+
+    ifExpr = expr->inner.ifExpr;
+    gotString = stringifyExpr(ifExpr->condition);
+    if (cmpStringStr(gotString, "(x < y)"))
+    {
+        PRINT_ERR("ifExpr->condition was expected `(x < y)`, instead of `%s`",
+                  getStr(gotString));
+        freeString(gotString);
+        freeStmt(stmt);
+        testStatus = TEST_FAILED;
+        goto EXIT_IF_FAILED;
+    }
+
+    if (ifExpr->consequence->len != 1)
+    {
+        PRINT_ERR("consequence is not 1 statement. got = %zu",
+                  ifExpr->consequence->len);
+        freeString(gotString);
+        freeStmt(stmt);
+        testStatus = TEST_FAILED;
+        goto EXIT_IF_FAILED;
+    }
+
+    consequenceStmt = popStmt((Program*)ifExpr->consequence);
+    if (consequenceStmt->type != STMT_EXPRESSION)
+    {
+        PRINT_ERR("consequenceStmt>type is not %d. got = %d", STMT_EXPRESSION,
+                  stmt->type);
+        freeStmt(consequenceStmt);
+        freeString(gotString);
+        freeStmt(stmt);
+        testStatus = TEST_FAILED;
+        goto EXIT_IF_FAILED;
+    }
+
+    consequence = consequenceStmt->inner.exprStmt->expression;
+    if (!testIdentExpr(consequence, "x"))
+    {
+        freeStmt(consequenceStmt);
+        freeString(gotString);
+        freeStmt(stmt);
+        testStatus = TEST_FAILED;
+        goto EXIT_IF_FAILED;
+    }
+
+    if (ifExpr->alternative)
+    {
+        PRINT_ERR("if->alternative is not NULL.", NULL);
+        freeStmt(consequenceStmt);
+        freeString(gotString);
+        freeStmt(stmt);
+        testStatus = TEST_FAILED;
+        goto EXIT_IF_FAILED;
+    }
+
+    freeStmt(consequenceStmt);
+    freeString(gotString);
+    freeStmt(stmt);
+
+EXIT_IF_FAILED:
+    freeProgram(program);
+    freeParser(p);
+    return testStatus;
+}
+
+TEST(TestIfElseExprs)
+{
+    static int testStatus = TEST_SUCESSED;
+
+    Stmt* stmt = NULL;
+    Stmt* consequenceStmt = NULL;
+    Stmt* alternativeStmt = NULL;
+    Expr* expr = NULL;
+    Expr* consequence = NULL;
+    Expr* alternative = NULL;
+    IfExpr* ifExpr = NULL;
+    String* gotString = NULL;
+
+    const char* input = "if (x < y) { x } else { y };";
+    MAKE_PARSER(1);
+
+    stmt = popStmt(program);
+
+    if (stmt->type != STMT_EXPRESSION)
+    {
+        PRINT_ERR("stmt->type is not %d. got = %d", STMT_EXPRESSION,
+                  stmt->type);
+        freeStmt(stmt);
+        testStatus = TEST_FAILED;
+        goto EXIT_IF_FAILED;
+    }
+
+    expr = stmt->inner.exprStmt->expression;
+    if (expr->type != EXPR_IF)
+    {
+        PRINT_ERR("expr->type is not %d. got = %d", EXPR_IF, expr->type);
+        freeStmt(stmt);
+        testStatus = TEST_FAILED;
+        goto EXIT_IF_FAILED;
+    }
+
+    ifExpr = expr->inner.ifExpr;
+    gotString = stringifyExpr(ifExpr->condition);
+    if (cmpStringStr(gotString, "(x < y)"))
+    {
+        PRINT_ERR("ifExpr->condition was expected `(x < y)`, instead of `%s`",
+                  getStr(gotString));
+        freeString(gotString);
+        freeStmt(stmt);
+        testStatus = TEST_FAILED;
+        goto EXIT_IF_FAILED;
+    }
+
+    if (ifExpr->consequence->len != 1)
+    {
+        PRINT_ERR("consequence is not 1 statement. got = %zu",
+                  ifExpr->consequence->len);
+        freeString(gotString);
+        freeStmt(stmt);
+        testStatus = TEST_FAILED;
+        goto EXIT_IF_FAILED;
+    }
+
+    consequenceStmt = popStmt((Program*)ifExpr->consequence);
+    if (consequenceStmt->type != STMT_EXPRESSION)
+    {
+        PRINT_ERR("consequenceStmt>type is not %d. got = %d", STMT_EXPRESSION,
+                  stmt->type);
+        freeStmt(consequenceStmt);
+        freeString(gotString);
+        freeStmt(stmt);
+        testStatus = TEST_FAILED;
+        goto EXIT_IF_FAILED;
+    }
+
+    consequence = consequenceStmt->inner.exprStmt->expression;
+    if (!testIdentExpr(consequence, "x"))
+    {
+        freeStmt(consequenceStmt);
+        freeString(gotString);
+        freeStmt(stmt);
+        testStatus = TEST_FAILED;
+        goto EXIT_IF_FAILED;
+    }
+
+    if (ifExpr->alternative->len != 1)
+    {
+        PRINT_ERR("alternative is not 1 statement. got = %zu",
+                  ifExpr->alternative->len);
+        freeStmt(consequenceStmt);
+        freeString(gotString);
+        freeStmt(stmt);
+        testStatus = TEST_FAILED;
+        goto EXIT_IF_FAILED;
+    }
+
+    alternativeStmt = popStmt((Program*)ifExpr->alternative);
+    if (alternativeStmt->type != STMT_EXPRESSION)
+    {
+        PRINT_ERR("alternativeStmt>type is not %d. got = %d", STMT_EXPRESSION,
+                  stmt->type);
+        freeStmt(alternativeStmt);
+        freeStmt(consequenceStmt);
+        freeString(gotString);
+        freeStmt(stmt);
+        testStatus = TEST_FAILED;
+        goto EXIT_IF_FAILED;
+    }
+
+    alternative = alternativeStmt->inner.exprStmt->expression;
+    if (!testIdentExpr(alternative, "y"))
+    {
+        freeStmt(alternativeStmt);
+        freeStmt(consequenceStmt);
+        freeString(gotString);
+        freeStmt(stmt);
+        testStatus = TEST_FAILED;
+        goto EXIT_IF_FAILED;
+    }
+
+    freeStmt(alternativeStmt);
+    freeStmt(consequenceStmt);
+    freeString(gotString);
+    freeStmt(stmt);
+
+EXIT_IF_FAILED:
+    freeProgram(program);
+    freeParser(p);
+    return testStatus;
+}
+
 ///////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////
 
@@ -546,6 +771,30 @@ int testLetStatement(Stmt* stmt, const char* name)
     {
         PRINT_ERR("letStmt->name->value is not `%s`. got `%s`.", name,
                   getStr(letStmt->name->value));
+        return FALSE;
+    }
+
+    return TRUE;
+}
+
+int testIdentExpr(Expr* expr, const char* expected)
+{
+    if (!expr)
+    {
+        PRINT_ERR("expr is NULL", NULL);
+        return FALSE;
+    }
+
+    if (expr->type != EXPR_IDENT)
+    {
+        PRINT_ERR("expr->type is not %d. got = %d", EXPR_IDENT, expr->type);
+        return FALSE;
+    }
+
+    if (cmpStringStr(expr->inner.identExpr->value, expected) != 0)
+    {
+        PRINT_ERR("given expr is not `%s`. got = `%s`", expected,
+                  getStr(expr->inner.identExpr->value));
         return FALSE;
     }
 
@@ -602,6 +851,8 @@ MAIN_TEST(
         RUN_TEST(TestPrefixExprs);
         RUN_TEST(TestInfixExprs);
         RUN_TEST(TestOperatorPrecedenceParsing);
+        RUN_TEST(TestIfExprs);
+        RUN_TEST(TestIfElseExprs);
     })
 
 #undef MAIN_TEST_NAME // End TestParser

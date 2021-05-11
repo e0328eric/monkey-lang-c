@@ -45,6 +45,7 @@ Stmt* parseStmt(Parser*);
 void parseLetStmt(Parser*, Stmt*);
 void parseReturnStmt(Parser*, Stmt*);
 void parseExprStmt(Parser*, Stmt*);
+void parseBlockStmt(Parser*, BlockStmt*);
 
 void parseExpr(Parser*, Expr**, Precedence);
 
@@ -54,6 +55,7 @@ void parseIntExpr(Parser*, Expr**);
 void parseBoolExpr(Parser*, Expr**);
 void parsePrefixExpr(Parser*, Expr**);
 void parseGroupedExpr(Parser*, Expr**);
+void parseIfExpr(Parser*, Expr**);
 
 // InfixParseFn functions
 void parseInfixExpr(Parser*, Expr*, Expr*);
