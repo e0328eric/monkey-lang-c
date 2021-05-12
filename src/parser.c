@@ -30,6 +30,7 @@
         freeExprWithoutSelf(*expr);     \
         (*expr)->type = EMPTY_EXPR;     \
         (*expr)->inner.checkIsNull = 0; \
+        return;                         \
     }
 
 const PrefixParseFn prefixParseFns[] = {
@@ -53,7 +54,7 @@ const PrefixParseFn prefixParseFns[] = {
     NULL,             // T_LBRACE
     NULL,             // T_RBRACE
     NULL,             // T_LET
-    NULL,             // T_FUNCTION
+    parseFntExpr,     // T_FUNCTION
     parseIfExpr,      // T_IF
     NULL,             // T_ELSE
     parseBoolExpr,    // T_TRUE
@@ -79,7 +80,7 @@ const InfixParseFn infixParseFns[] = {
     parseInfixExpr, // T_SLASH
     NULL,           // T_COMMA
     NULL,           // T_SEMICOLON
-    NULL,           // T_LPAREN
+    parseCallExpr,  // T_LPAREN
     NULL,           // T_RPAREN
     NULL,           // T_LBRACE
     NULL,           // T_RBRACE
@@ -113,6 +114,9 @@ inline Precedence takePrec(TokenType tokType)
     case T_SLASH:
     case T_ASTERISK:
         return PRODUCT_PREC;
+
+    case T_LPAREN:
+        return CALL_PREC;
 
     default:
         return LOWEST_PREC;
@@ -212,12 +216,16 @@ void parseLetStmt(Parser* p, Stmt* stmt)
     LetStmt* letStmt = mkLetStmt();
 
     EXPECT_PEEK(letStmt, T_IDENT, freeLetStmt);
+
     letStmt->name->value = mkString(getStr(p->curToken.literal));
+
     EXPECT_PEEK(letStmt, T_ASSIGN, freeLetStmt);
 
-    // TODO: We're skipping the expressions until we
-    // encounter a semicolon
-    while (!curTokenIs(p, T_SEMICOLON))
+    takeToken(p);
+
+    parseExpr(p, &letStmt->value, LOWEST_PREC);
+
+    if (peekTokenIs(p, T_SEMICOLON))
         takeToken(p);
 
     stmt->inner.letStmt = letStmt;
@@ -230,9 +238,9 @@ void parseReturnStmt(Parser* p, Stmt* stmt)
     ReturnStmt* returnStmt = mkReturnStmt();
     takeToken(p);
 
-    // TODO: We're skipping the expressions until we
-    // encounter a semicolon
-    while (!curTokenIs(p, T_SEMICOLON))
+    parseExpr(p, &returnStmt->returnValue, LOWEST_PREC);
+
+    if (peekTokenIs(p, T_SEMICOLON))
         takeToken(p);
 
     stmt->inner.returnStmt = returnStmt;
@@ -361,30 +369,80 @@ void parseIfExpr(Parser* p, Expr** expr)
     (*expr)->type = EXPR_IF;
     (*expr)->inner.ifExpr = mkIfExpr();
 
-#define condition   (*expr)->inner.ifExpr->condition
-#define consequence (*expr)->inner.ifExpr->consequence
-#define alternative (*expr)->inner.ifExpr->alternative
+#define ifExpr ((*expr)->inner.ifExpr)
 
-    parseExpr(p, &condition, LOWEST_PREC);
+    parseExpr(p, &ifExpr->condition, LOWEST_PREC);
 
     EXPECT_PEEK_EXPR(T_RPAREN);
     EXPECT_PEEK_EXPR(T_LBRACE);
 
-    parseBlockStmt(p, consequence);
+    parseBlockStmt(p, ifExpr->consequence);
 
     if (peekTokenIs(p, T_ELSE))
     {
         takeToken(p);
 
         EXPECT_PEEK_EXPR(T_LBRACE);
-        alternative = mkBlockStmt();
+        ifExpr->alternative = mkBlockStmt();
 
-        parseBlockStmt(p, alternative);
+        parseBlockStmt(p, ifExpr->alternative);
     }
 
-#undef alternative
-#undef consequence
-#undef condition
+#undef ifExpr
+}
+
+void parseFntExpr(Parser* p, Expr** expr)
+{
+    ASSERT(expr && *expr);
+
+    EXPECT_PEEK_EXPR(T_LPAREN);
+
+    (*expr)->type = EXPR_FUNCTION;
+    (*expr)->inner.fntExpr = mkFntExpr();
+
+#define fntExpr ((*expr)->inner.fntExpr)
+
+    parseFntParams(p, &fntExpr->parameters);
+
+    EXPECT_PEEK_EXPR(T_LBRACE);
+
+    parseBlockStmt(p, fntExpr->body);
+
+#undef fntExpr
+}
+
+void parseFntParams(Parser* p, Parameters** params)
+{
+#define params (*params)
+    IdentExpr* ident = NULL;
+
+    if (peekTokenIs(p, T_RPAREN))
+    {
+        takeToken(p);
+        return;
+    }
+
+    takeToken(p);
+
+    ident = mkIdentExpr();
+    ident->value = mkString(getStr(p->curToken.literal));
+    pushParam(params, &ident);
+
+    while (peekTokenIs(p, T_COMMA))
+    {
+        takeToken(p);
+        takeToken(p);
+        ident = mkIdentExpr();
+        ident->value = mkString(getStr(p->curToken.literal));
+        pushParam(params, &ident);
+    }
+
+    if (!expectPeek(p, T_RPAREN))
+    {
+        freeParameters(params);
+        params = NULL;
+    }
+#undef params
 }
 
 void parseInfixExpr(Parser* p, Expr* output, Expr* left)
@@ -401,6 +459,50 @@ void parseInfixExpr(Parser* p, Expr* output, Expr* left)
     parseExpr(p, &output->inner.infixExpr->right, prec);
 }
 
+void parseCallExpr(Parser* p, Expr* output, Expr* function)
+{
+    ASSERT(output && function);
+
+    output->type = EXPR_CALL;
+    output->inner.callExpr = mkCallExpr();
+    output->inner.callExpr->function = function;
+    parseCallArguments(p, &output->inner.callExpr->arguments);
+}
+
+void parseCallArguments(Parser* p, Arguments** args)
+{
+#define args (*args)
+    Expr* expr = NULL;
+
+    if (peekTokenIs(p, T_RPAREN))
+    {
+        takeToken(p);
+        return;
+    }
+
+    takeToken(p);
+
+    expr = mkExpr();
+    parseExpr(p, &expr, LOWEST_PREC);
+    pushArgs(args, &expr);
+
+    while (peekTokenIs(p, T_COMMA))
+    {
+        takeToken(p);
+        takeToken(p);
+        expr = mkExpr();
+        parseExpr(p, &expr, LOWEST_PREC);
+        pushArgs(args, &expr);
+    }
+
+    if (!expectPeek(p, T_RPAREN))
+    {
+        freeArguments(args);
+        args = NULL;
+    }
+#undef args
+}
+
 ////////////////////////////////////////// // END OF MAIN PARSER IMPLEMENTATION
 
 // Helper functions to implementing the parser such as emitting error messages
@@ -412,6 +514,8 @@ String** getErrors(Parser* p)
     p->errLen = 0;
     return output;
 }
+
+int getErrLen(Parser* p) { return p->errLen; }
 
 void peekError(Parser* p, TokenType tokType)
 {

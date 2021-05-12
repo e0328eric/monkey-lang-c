@@ -13,6 +13,7 @@ void freeParser(Parser*);
 void takeToken(Parser*);
 
 String** getErrors(Parser*);
+int getErrLen(Parser*);
 Program* parseProgram(Parser*);
 
 #ifdef __PRIVATE_PARSER_OBJECTS__
@@ -48,6 +49,8 @@ void parseExprStmt(Parser*, Stmt*);
 void parseBlockStmt(Parser*, BlockStmt*);
 
 void parseExpr(Parser*, Expr**, Precedence);
+void parseFntParams(Parser*, Parameters**);
+void parseCallArguments(Parser*, Arguments**);
 
 // PrefixParseFn functions
 void parseIdentExpr(Parser*, Expr**);
@@ -56,9 +59,11 @@ void parseBoolExpr(Parser*, Expr**);
 void parsePrefixExpr(Parser*, Expr**);
 void parseGroupedExpr(Parser*, Expr**);
 void parseIfExpr(Parser*, Expr**);
+void parseFntExpr(Parser*, Expr**);
 
 // InfixParseFn functions
 void parseInfixExpr(Parser*, Expr*, Expr*);
+void parseCallExpr(Parser*, Expr*, Expr*);
 
 #endif // __PRIVATE_PARSER_OBJECTS__
 

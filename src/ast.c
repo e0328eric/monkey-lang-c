@@ -138,6 +138,62 @@ IfExpr* mkIfExpr(void)
     return output;
 }
 
+FntExpr* mkFntExpr(void)
+{
+    FntExpr* output = malloc(sizeof(FntExpr));
+
+    output->parameters = malloc(sizeof(Parameters));
+    output->parameters->head = malloc(sizeof(struct ParamNode));
+    output->parameters->tail = malloc(sizeof(struct ParamNode));
+    output->parameters->len = 0;
+
+#define head output->parameters->head
+#define tail output->parameters->tail
+
+    head->before = NULL;
+    head->value = NULL;
+    head->next = tail;
+
+    tail->before = head;
+    tail->value = NULL;
+    tail->next = NULL;
+
+#undef tail
+#undef head
+
+    output->body = mkBlockStmt();
+
+    return output;
+}
+
+CallExpr* mkCallExpr(void)
+{
+    CallExpr* output = malloc(sizeof(CallExpr));
+
+    output->function = mkExpr();
+
+    output->arguments = malloc(sizeof(Arguments));
+    output->arguments->head = malloc(sizeof(struct ArgNode));
+    output->arguments->tail = malloc(sizeof(struct ArgNode));
+    output->arguments->len = 0;
+
+#define head output->arguments->head
+#define tail output->arguments->tail
+
+    head->before = NULL;
+    head->value = NULL;
+    head->next = tail;
+
+    tail->before = head;
+    tail->value = NULL;
+    tail->next = NULL;
+
+#undef tail
+#undef head
+
+    return output;
+}
+
 /* Implementing Destructors */
 void freeProgram(Program* pProg)
 {
@@ -219,6 +275,15 @@ void freeExprWithoutSelf(Expr* pExpr)
 
     case EXPR_IF:
         freeIfExpr(pExpr->inner.ifExpr);
+        break;
+
+    case EXPR_FUNCTION:
+        freeFntExpr(pExpr->inner.fntExpr);
+        break;
+
+    case EXPR_CALL:
+        freeCallExpr(pExpr->inner.callExpr);
+        break;
 
     case EMPTY_EXPR:
         break;
@@ -329,6 +394,56 @@ void freeIfExpr(IfExpr* pIfExpr)
     free(pIfExpr);
 }
 
+void freeFntExpr(FntExpr* pFntExpr)
+{
+    if (!pFntExpr)
+        return;
+
+    freeParameters(pFntExpr->parameters);
+    freeBlockStmt(pFntExpr->body);
+    free(pFntExpr);
+}
+
+void freeParameters(Parameters* pParam)
+{
+    struct ParamNode* tmp = pParam->tail->before;
+    while (tmp != pParam->head)
+    {
+        freeIdentExpr(tmp->value);
+        if (tmp)
+            free(tmp);
+        tmp = tmp->before;
+    }
+    free(pParam->tail);
+    free(pParam->head);
+    free(pParam);
+}
+
+void freeCallExpr(CallExpr* pCallExpr)
+{
+    if (!pCallExpr)
+        return;
+
+    freeExpr(pCallExpr->function);
+    freeArguments(pCallExpr->arguments);
+    free(pCallExpr);
+}
+
+void freeArguments(Arguments* pArgs)
+{
+    struct ArgNode* tmp = pArgs->tail->before;
+    while (tmp != pArgs->head)
+    {
+        freeExpr(tmp->value);
+        if (tmp)
+            free(tmp);
+        tmp = tmp->before;
+    }
+    free(pArgs->tail);
+    free(pArgs->head);
+    free(pArgs);
+}
+
 /* Implementing Stringify */
 String* stringifyProgram(Program* pProg)
 {
@@ -409,6 +524,15 @@ String* stringifyExpr(Expr* pExpr)
 
     case EXPR_IF:
         output = stringifyIfExpr(pExpr->inner.ifExpr);
+        break;
+
+    case EXPR_FUNCTION:
+        output = stringifyFntExpr(pExpr->inner.fntExpr);
+        break;
+
+    case EXPR_CALL:
+        output = stringifyCallExpr(pExpr->inner.callExpr);
+        break;
 
     default:
         break;
@@ -533,6 +657,50 @@ String* stringifyIfExpr(IfExpr* pIfExpr)
     return output;
 }
 
+String* stringifyFntExpr(FntExpr* pFntExpr)
+{
+    if (!pFntExpr)
+        return NULL;
+
+    String* output = mkString("fn(");
+
+    struct ParamNode* tmp = pFntExpr->parameters->tail->before;
+    while (tmp != pFntExpr->parameters->head)
+    {
+        concatFreeString(output, stringifyIdentExpr(tmp->value));
+        if (tmp->before != pFntExpr->parameters->head)
+            appendStr(output, ", ");
+        tmp = tmp->before;
+    }
+
+    appendStr(output, ") ");
+    concatFreeString(output, stringifyBlockStmt(pFntExpr->body));
+
+    return output;
+}
+
+String* stringifyCallExpr(CallExpr* pCallExpr)
+{
+    if (!pCallExpr)
+        return NULL;
+
+    String* output = mkString("");
+    concatFreeString(output, stringifyExpr(pCallExpr->function));
+    appendChar(output, '(');
+
+    struct ArgNode* tmp = pCallExpr->arguments->tail->before;
+    while (tmp != pCallExpr->arguments->head)
+    {
+        concatFreeString(output, stringifyExpr(tmp->value));
+        if (tmp->before != pCallExpr->arguments->head)
+            appendStr(output, ", ");
+        tmp = tmp->before;
+    }
+    appendStr(output, ")");
+
+    return output;
+}
+
 /* Implementing push and pop */
 void pushStmt(Program* pProg, Stmt** pStmt)
 {
@@ -570,4 +738,40 @@ Stmt* popStmt(Program* pProg)
     free(tmp);
 
     return output;
+}
+
+void pushParam(Parameters* pParam, IdentExpr** pIdent)
+{
+    if (!pParam || !pIdent)
+        return;
+
+    struct ParamNode* tmp = malloc(sizeof(struct ParamNode));
+
+    tmp->value = *pIdent;
+    *pIdent = NULL;
+
+    tmp->before = pParam->head;
+    tmp->next = pParam->head->next;
+    pParam->head->next = tmp;
+    tmp->next->before = tmp;
+
+    ++pParam->len;
+}
+
+void pushArgs(Arguments* pArgs, Expr** pExpr)
+{
+    if (!pArgs || !pExpr)
+        return;
+
+    struct ArgNode* tmp = malloc(sizeof(struct ArgNode));
+
+    tmp->value = *pExpr;
+    *pExpr = NULL;
+
+    tmp->before = pArgs->head;
+    tmp->next = pArgs->head->next;
+    pArgs->head->next = tmp;
+    tmp->next->before = tmp;
+
+    ++pArgs->len;
 }

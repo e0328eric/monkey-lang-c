@@ -41,7 +41,7 @@
 #define MAKE_PARSER(expectedLen) MAKE_PARSER2(input, expectedLen)
 
 /* Function Signatures */
-int testLetStatement(Stmt*, const char*);
+int testLetStatement(Stmt*, const char*, int64_t);
 int testIdentExpr(Expr*, const char*);
 int testLiteral(Expr*, int64_t);
 
@@ -57,10 +57,11 @@ TEST(TestLetStmts)
     struct
     {
         const char* expectedIdentifier;
+        int64_t expectedValue;
     } tests[] = {
-        {"x"},
-        {"y"},
-        {"foobar"},
+        {"x", 5},
+        {"y", 10},
+        {"foobar", 838383},
     };
     const char* input = "let x = 5;\n"
                         "let y = 10;\n"
@@ -71,7 +72,7 @@ TEST(TestLetStmts)
     for (int i = 0; i < 3; ++i)
     {
         stmt = popStmt(program);
-        if (!testLetStatement(stmt, tt.expectedIdentifier))
+        if (!testLetStatement(stmt, tt.expectedIdentifier, tt.expectedValue))
         {
             freeStmt(stmt);
             testStatus = TEST_FAILED;
@@ -92,11 +93,16 @@ TEST(TestReturnStmts)
     static int testStatus = TEST_SUCESSED;
 
     Stmt* stmt = NULL;
+    struct
+    {
+        int64_t expectedValue;
+    } tests[] = {{5}, {10}, {993322}};
     const char* input = "return 5;\n"
                         "return 10;\n"
                         "return 993322;";
     MAKE_PARSER(3);
 
+#define tt tests[i]
     for (int i = 0; i < 3; ++i)
     {
         stmt = popStmt(program);
@@ -116,8 +122,16 @@ TEST(TestReturnStmts)
             testStatus = TEST_FAILED;
             goto EXIT_IF_FAILED;
         }
+
+        if (!testLiteral(stmt->inner.returnStmt->returnValue, tt.expectedValue))
+        {
+            freeStmt(stmt);
+            testStatus = TEST_FAILED;
+            goto EXIT_IF_FAILED;
+        }
         freeStmt(stmt);
     }
+#undef tt
 
 EXIT_IF_FAILED:
     freeProgram(program);
@@ -478,6 +492,18 @@ TEST(TestOperatorPrecedenceParsing)
             "!(true == true)",
             "(!(true == true))",
         },
+        {
+            "a + add(b * c) + d",
+            "((a + add((b * c))) + d)",
+        },
+        {
+            "add(a, b, 1, 2 * 3, 4 + 5, add(6, 7 * 8))",
+            "add(a, b, 1, (2 * 3), (4 + 5), add(6, (7 * 8)))",
+        },
+        {
+            "add(a + b + c * d / f + g)",
+            "add((((a + b) + ((c * d) / f)) + g))",
+        },
         {NULL, NULL},
     };
 
@@ -746,13 +772,194 @@ EXIT_IF_FAILED:
     return testStatus;
 }
 
+TEST(TestFunctionLiteralExprs)
+{
+    static int testStatus = TEST_SUCESSED;
+
+    Stmt* stmt = NULL;
+    Expr* expr = NULL;
+    FntExpr* fntExpr = NULL;
+    struct ParamNode* tmp = NULL;
+    String* gotString = NULL;
+
+    const char* input = "fn(x, y) { x + y; }";
+    MAKE_PARSER(1);
+
+    stmt = popStmt(program);
+
+    if (stmt->type != STMT_EXPRESSION)
+    {
+        PRINT_ERR("stmt->type is not %d. got = %d", STMT_EXPRESSION,
+                  stmt->type);
+        freeStmt(stmt);
+        testStatus = TEST_FAILED;
+        goto EXIT_IF_FAILED;
+    }
+
+    expr = stmt->inner.exprStmt->expression;
+    if (expr->type != EXPR_FUNCTION)
+    {
+        PRINT_ERR("expr->type is not %d. got = %d", EXPR_FUNCTION, expr->type);
+        freeStmt(stmt);
+        testStatus = TEST_FAILED;
+        goto EXIT_IF_FAILED;
+    }
+
+    fntExpr = expr->inner.fntExpr;
+    if (fntExpr->parameters->len != 2)
+    {
+        PRINT_ERR("The length of fntExpr->parameters is not %d. got = %zu", 2,
+                  fntExpr->parameters->len);
+        freeStmt(stmt);
+        testStatus = TEST_FAILED;
+        goto EXIT_IF_FAILED;
+    }
+
+    tmp = fntExpr->parameters->tail->before;
+    if (cmpStringStr(tmp->value->value, "x") != 0)
+    {
+        PRINT_ERR("Expected `%s`, got `%s`", "x",
+                  getStr(stringifyIdentExpr(tmp->value)));
+        freeStmt(stmt);
+        testStatus = TEST_FAILED;
+        goto EXIT_IF_FAILED;
+    }
+    tmp = tmp->before;
+    if (cmpStringStr(tmp->value->value, "y") != 0)
+    {
+        PRINT_ERR("Expected `%s`, got `%s`", "y",
+                  getStr(stringifyIdentExpr(tmp->value)));
+        freeStmt(stmt);
+        testStatus = TEST_FAILED;
+        goto EXIT_IF_FAILED;
+    }
+
+    if (fntExpr->body->len != 1)
+    {
+        PRINT_ERR("The length of fntExpr->body is not %d. got = %zu", 2,
+                  fntExpr->body->len);
+        freeStmt(stmt);
+        testStatus = TEST_FAILED;
+        goto EXIT_IF_FAILED;
+    }
+
+    gotString = stringifyBlockStmt(fntExpr->body);
+    if (cmpStringStr(gotString, "(x + y)") != 0)
+    {
+        PRINT_ERR("Expected `%s`, got = `%s`", "(x + y)", getStr(gotString));
+        freeString(gotString);
+        freeStmt(stmt);
+        testStatus = TEST_FAILED;
+        goto EXIT_IF_FAILED;
+    }
+
+    freeString(gotString);
+    freeStmt(stmt);
+
+EXIT_IF_FAILED:
+    freeProgram(program);
+    freeParser(p);
+    return testStatus;
+}
+
+TEST(TestCallExprs)
+{
+    static int testStatus = TEST_SUCESSED;
+
+    Stmt* stmt = NULL;
+    Expr* expr = NULL;
+    CallExpr* callExpr = NULL;
+    struct ArgNode* tmp = NULL;
+    String* gotString = NULL;
+
+    const char* input = "add(1, 2 * 3, 4 + 5);";
+    MAKE_PARSER(1);
+
+    stmt = popStmt(program);
+
+    if (stmt->type != STMT_EXPRESSION)
+    {
+        PRINT_ERR("stmt->type is not %d. got = %d", STMT_EXPRESSION,
+                  stmt->type);
+        freeStmt(stmt);
+        testStatus = TEST_FAILED;
+        goto EXIT_IF_FAILED;
+    }
+
+    expr = stmt->inner.exprStmt->expression;
+    if (expr->type != EXPR_CALL)
+    {
+        PRINT_ERR("expr->type is not %d. got = %d", EXPR_CALL, expr->type);
+        freeStmt(stmt);
+        testStatus = TEST_FAILED;
+        goto EXIT_IF_FAILED;
+    }
+
+    callExpr = expr->inner.callExpr;
+    if (callExpr->arguments->len != 3)
+    {
+        PRINT_ERR("The length of callExpr->arguments is not %d. got = %zu", 3,
+                  callExpr->arguments->len);
+        freeStmt(stmt);
+        testStatus = TEST_FAILED;
+        goto EXIT_IF_FAILED;
+    }
+
+    if (!testIdentExpr(callExpr->function, "add"))
+    {
+        freeStmt(stmt);
+        testStatus = TEST_FAILED;
+        goto EXIT_IF_FAILED;
+    }
+
+    tmp = callExpr->arguments->tail->before;
+    gotString = stringifyExpr(tmp->value);
+    if (cmpStringStr(gotString, "1") != 0)
+    {
+        PRINT_ERR("Expected `%s`, got `%s`", "1", getStr(gotString));
+        freeString(gotString);
+        freeStmt(stmt);
+        testStatus = TEST_FAILED;
+        goto EXIT_IF_FAILED;
+    }
+    freeString(gotString);
+
+    tmp = tmp->before;
+    gotString = stringifyExpr(tmp->value);
+    if (cmpStringStr(gotString, "(2 * 3)") != 0)
+    {
+        PRINT_ERR("Expected `%s`, got `%s`", "(2 * 3)", getStr(gotString));
+        freeString(gotString);
+        freeStmt(stmt);
+        testStatus = TEST_FAILED;
+        goto EXIT_IF_FAILED;
+    }
+    freeString(gotString);
+
+    tmp = tmp->before;
+    gotString = stringifyExpr(tmp->value);
+    if (cmpStringStr(gotString, "(4 + 5)") != 0)
+    {
+        PRINT_ERR("Expected `%s`, got `%s`", "(4 + 5)", getStr(gotString));
+        freeString(gotString);
+        freeStmt(stmt);
+        testStatus = TEST_FAILED;
+        goto EXIT_IF_FAILED;
+    }
+
+    freeString(gotString);
+    freeStmt(stmt);
+
+EXIT_IF_FAILED:
+    freeProgram(program);
+    freeParser(p);
+    return testStatus;
+}
+
 ///////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////
 
-#ifndef _MONKEY_PARSER_TEST_H_
-#define _MONKEY_PARSER_TEST_H_
-
-int testLetStatement(Stmt* stmt, const char* name)
+int testLetStatement(Stmt* stmt, const char* name, int64_t expectedValue)
 {
     if (!stmt)
     {
@@ -773,6 +980,9 @@ int testLetStatement(Stmt* stmt, const char* name)
                   getStr(letStmt->name->value));
         return FALSE;
     }
+
+    if (!testLiteral(letStmt->value, expectedValue))
+        return FALSE;
 
     return TRUE;
 }
@@ -831,16 +1041,13 @@ int testLiteral(Expr* expr, int64_t value)
         break;
 
     default:
-        PRINT_ERR("expr->type in testLiteral is neither EXPR_INTEGER nor "
-                  "EXPR_BOOL. got = %d",
-                  expr->type);
+        PRINT_ERR("expr->type in testLiteral is neither %d nor %d. got = %d",
+                  EXPR_INTEGER, EXPR_BOOL, expr->type);
         return FALSE;
     }
 
     return TRUE;
 }
-
-#endif // _MONKEY_PARSER_TEST_H_
 
 MAIN_TEST(
     {
@@ -853,6 +1060,8 @@ MAIN_TEST(
         RUN_TEST(TestOperatorPrecedenceParsing);
         RUN_TEST(TestIfExprs);
         RUN_TEST(TestIfElseExprs);
+        RUN_TEST(TestFunctionLiteralExprs);
+        RUN_TEST(TestCallExprs);
     })
 
 #undef MAIN_TEST_NAME // End TestParser
