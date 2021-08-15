@@ -1,46 +1,47 @@
 #include <stdio.h>
-
-#ifdef __clang__
-#include <readline/history.h>
-#include <readline/readline.h>
 #include <stdlib.h>
 #include <string.h>
+
+#include <linenoise.h>
 
 #include "lexer.h"
 #include "parser.h"
 #include "repl.h"
 
-#define PROMPT ">> "
-#define RED    "\x1b[1m\x1b[91m"
-#endif
+#define PROMPT     ">> "
+#define FMT_RED    "\x1b[1m\x1b[91m"
+#define FMT_NORMAL "\x1b[0m"
 
 void printParserErrors(String**);
 
 void startREPL(void)
 {
-#ifdef __clang__
-    using_history();
-
-    char* line = NULL;
-    Lexer* l = NULL;
-    Parser* p = NULL;
-    Program* program = NULL;
+    char* line        = NULL;
+    Lexer* l          = NULL;
+    Parser* p         = NULL;
+    Program* program  = NULL;
     String* stringify = NULL;
+
+    linenoiseHistorySetMaxLen(15);
+
+    fprintf(stdout, "[ Monkey Language REPL ]\n");
+    fprintf(stdout, "Press Ctrl+D or type :q to quit the REPL\n");
+    fprintf(stdout, "-------------------------------\n\n");
 
     while (1)
     {
-        line = readline(PROMPT);
+        line = linenoise(PROMPT);
 
-        if (!line || strcmp(line, ":quit") == 0)
+        if (!line || strcmp(line, ":q") == 0)
         {
-            free(line);
+            linenoiseFree(line);
             break;
         }
 
-        add_history(line);
+        linenoiseHistoryAdd(line);
 
-        l = mkLexer(line);
-        p = mkParser(l);
+        l       = mkLexer(line);
+        p       = mkParser(l);
         program = parseProgram(p);
 
         if (getErrLen(p) != 0)
@@ -55,19 +56,15 @@ void startREPL(void)
         freeString(stringify);
         freeProgram(program);
         freeParser(p);
-        free(line);
+        linenoiseFree(line);
     }
-#else
-    printf("ERROR: Compile this with clang compiler.\n"
-           "because gcc cause an error linking readline library.\n");
-#endif
 }
 
 void printParserErrors(String** errors)
 {
     for (int i = 0; errors[i]; ++i)
     {
-        printf(RED "[ERROR]: %s\n\x1b[0m", getStr(errors[i]));
+        printf(FMT_RED "[ERROR]: %s" FMT_NORMAL "\n\n", getStr(errors[i]));
         freeString(errors[i]);
     }
     free(errors);

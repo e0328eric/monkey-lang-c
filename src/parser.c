@@ -24,13 +24,13 @@
         return;                                    \
     }
 
-#define EXPECT_PEEK_EXPR(tokType)       \
-    if (!expectPeek(p, tokType))        \
-    {                                   \
-        freeExprWithoutSelf(*expr);     \
-        (*expr)->type = EMPTY_EXPR;     \
-        (*expr)->inner.checkIsNull = 0; \
-        return;                         \
+#define EXPECT_PEEK_EXPR(tokType)                \
+    if (!expectPeek(p, tokType))                 \
+    {                                            \
+        freeExprWithoutSelf(*expr);              \
+        (*expr)->type              = EMPTY_EXPR; \
+        (*expr)->inner.checkIsNull = 0;          \
+        return;                                  \
     }
 
 const PrefixParseFn prefixParseFns[] = {
@@ -134,12 +134,12 @@ struct Parser
 
 Parser* mkParser(Lexer* l)
 {
-    Parser* output = malloc(sizeof(Parser));
-    output->l = l;
-    output->curToken = INIT_TOKEN;
+    Parser* output    = malloc(sizeof(Parser));
+    output->l         = l;
+    output->curToken  = INIT_TOKEN;
     output->peekToken = INIT_TOKEN;
-    output->errors = NULL;
-    output->errLen = 0;
+    output->errors    = NULL;
+    output->errLen    = 0;
 
     takeToken(output);
     takeToken(output);
@@ -169,7 +169,7 @@ void freeParser(Parser* p)
 Program* parseProgram(Parser* p)
 {
     Program* program = mkProgram();
-    Stmt* stmt = NULL;
+    Stmt* stmt       = NULL;
 
     while (p->curToken.type != T_EOF)
     {
@@ -198,6 +198,10 @@ Stmt* parseStmt(Parser* p)
     case T_RETURN:
         stmt->type = STMT_RETURN;
         parseReturnStmt(p, stmt);
+        break;
+
+    case T_ILLEGAL:
+        illegalTokenFoundError(p);
         break;
 
     default:
@@ -302,7 +306,7 @@ void parseExpr(Parser* p, Expr** pExpr, Precedence prec)
         takeToken(p);
 
         leftExpr = *pExpr;
-        *pExpr = mkExpr();
+        *pExpr   = mkExpr();
         infix(p, *pExpr, leftExpr);
     }
 }
@@ -311,8 +315,8 @@ void parseIdentExpr(Parser* p, Expr** expr)
 {
     ASSERT(expr && *expr);
 
-    (*expr)->type = EXPR_IDENT;
-    (*expr)->inner.identExpr = mkIdentExpr();
+    (*expr)->type                   = EXPR_IDENT;
+    (*expr)->inner.identExpr        = mkIdentExpr();
     (*expr)->inner.identExpr->value = mkString(getStr(p->curToken.literal));
 }
 
@@ -320,8 +324,8 @@ void parseIntExpr(Parser* p, Expr** expr)
 {
     ASSERT(expr && *expr);
 
-    (*expr)->type = EXPR_INTEGER;
-    (*expr)->inner.intExpr = mkIntExpr();
+    (*expr)->type                 = EXPR_INTEGER;
+    (*expr)->inner.intExpr        = mkIntExpr();
     (*expr)->inner.intExpr->value = atoll(getStr(p->curToken.literal));
 }
 
@@ -329,8 +333,8 @@ void parseBoolExpr(Parser* p, Expr** expr)
 {
     ASSERT(expr && *expr);
 
-    (*expr)->type = EXPR_BOOL;
-    (*expr)->inner.boolExpr = mkBoolExpr();
+    (*expr)->type                  = EXPR_BOOL;
+    (*expr)->inner.boolExpr        = mkBoolExpr();
     (*expr)->inner.boolExpr->value = curTokenIs(p, T_TRUE);
 }
 
@@ -338,8 +342,8 @@ void parsePrefixExpr(Parser* p, Expr** expr)
 {
     ASSERT(expr && *expr);
 
-    (*expr)->type = EXPR_PREFIX;
-    (*expr)->inner.prefixExpr = mkPrefixExpr();
+    (*expr)->type                  = EXPR_PREFIX;
+    (*expr)->inner.prefixExpr      = mkPrefixExpr();
     (*expr)->inner.prefixExpr->opt = mkString(getStr(p->curToken.literal));
 
     takeToken(p);
@@ -366,7 +370,7 @@ void parseIfExpr(Parser* p, Expr** expr)
 
     takeToken(p);
 
-    (*expr)->type = EXPR_IF;
+    (*expr)->type         = EXPR_IF;
     (*expr)->inner.ifExpr = mkIfExpr();
 
 #define ifExpr ((*expr)->inner.ifExpr)
@@ -397,7 +401,7 @@ void parseFntExpr(Parser* p, Expr** expr)
 
     EXPECT_PEEK_EXPR(T_LPAREN);
 
-    (*expr)->type = EXPR_FUNCTION;
+    (*expr)->type          = EXPR_FUNCTION;
     (*expr)->inner.fntExpr = mkFntExpr();
 
 #define fntExpr ((*expr)->inner.fntExpr)
@@ -424,7 +428,7 @@ void parseFntParams(Parser* p, Parameters** params)
 
     takeToken(p);
 
-    ident = mkIdentExpr();
+    ident        = mkIdentExpr();
     ident->value = mkString(getStr(p->curToken.literal));
     pushParam(params, &ident);
 
@@ -432,7 +436,7 @@ void parseFntParams(Parser* p, Parameters** params)
     {
         takeToken(p);
         takeToken(p);
-        ident = mkIdentExpr();
+        ident        = mkIdentExpr();
         ident->value = mkString(getStr(p->curToken.literal));
         pushParam(params, &ident);
     }
@@ -449,10 +453,10 @@ void parseInfixExpr(Parser* p, Expr* output, Expr* left)
 {
     ASSERT(output && left);
 
-    output->type = EXPR_INFIX;
-    output->inner.infixExpr = mkInfixExpr();
+    output->type                  = EXPR_INFIX;
+    output->inner.infixExpr       = mkInfixExpr();
     output->inner.infixExpr->left = left;
-    output->inner.infixExpr->opt = mkString(getStr(p->curToken.literal));
+    output->inner.infixExpr->opt  = mkString(getStr(p->curToken.literal));
 
     Precedence prec = curPrecedence(p);
     takeToken(p);
@@ -463,8 +467,8 @@ void parseCallExpr(Parser* p, Expr* output, Expr* function)
 {
     ASSERT(output && function);
 
-    output->type = EXPR_CALL;
-    output->inner.callExpr = mkCallExpr();
+    output->type                     = EXPR_CALL;
+    output->inner.callExpr           = mkCallExpr();
     output->inner.callExpr->function = function;
     parseCallArguments(p, &output->inner.callExpr->arguments);
 }
@@ -510,8 +514,8 @@ void parseCallArguments(Parser* p, Arguments** args)
 String** getErrors(Parser* p)
 {
     String** output = p->errors;
-    p->errors = NULL;
-    p->errLen = 0;
+    p->errors       = NULL;
+    p->errLen       = 0;
     return output;
 }
 
@@ -533,7 +537,25 @@ void peekError(Parser* p, TokenType tokType)
     if (!p->errors)
         p->errors = malloc(sizeof(String*) * (MAXIMUM_ERR_MSGS + 1));
     p->errors[p->errLen++] = mkString(msg);
-    p->errors[p->errLen] = NULL;
+    p->errors[p->errLen]   = NULL;
+}
+
+void illegalTokenFoundError(Parser* p)
+{
+    char msg[60];
+
+    if (p->errLen >= MAXIMUM_ERR_MSGS)
+    {
+        fprintf(stderr, "too many parse error occurs.");
+        return;
+    }
+
+    sprintf(msg, "illegal token found");
+
+    if (!p->errors)
+        p->errors = malloc(sizeof(String*) * (MAXIMUM_ERR_MSGS + 1));
+    p->errors[p->errLen++] = mkString(msg);
+    p->errors[p->errLen]   = NULL;
 }
 
 void noPrefixParseFnError(Parser* p, TokenType tokType)
@@ -552,13 +574,13 @@ void noPrefixParseFnError(Parser* p, TokenType tokType)
     if (!p->errors)
         p->errors = malloc(sizeof(String*) * (MAXIMUM_ERR_MSGS + 1));
     p->errors[p->errLen++] = mkString(msg);
-    p->errors[p->errLen] = NULL;
+    p->errors[p->errLen]   = NULL;
 }
 
 void takeToken(Parser* p)
 {
     freeToken(&p->curToken);
-    p->curToken = p->peekToken;
+    p->curToken  = p->peekToken;
     p->peekToken = nextToken(p->l);
 }
 

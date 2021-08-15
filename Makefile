@@ -1,8 +1,10 @@
-CC = clang
+PWD := $(shell pwd)
+
+CC := clang
 CFLAGS = -std=c11 -O3 -Wall -Wextra -Wpedantic -Wconversion
 # For Debugging
 CFLAGS += -ggdb
-INCLUDE = -lreadline
+INCLUDE = -I$(PWD)/lib/linenoise
 LDFLAGS =
 
 SRC_DIR = ./src
@@ -32,22 +34,26 @@ TEST_OBJECTS = $(patsubst %.o,$(OBJ_DIR)/%.o,$(TEST_OBJS))
 DEPS = $(RUN_OBJECTS:.o=.d)
 DEPS += $(TEST_OBJECTS:.o=.d)
 
-all: main
+all: linenoise main
+
+linenoise:
+	cd $(PWD)/lib/linenoise/ && $(CC) -c linenoise.c -o linenoise.o
+	mv $(PWD)/lib/linenoise/linenoise.o $(OBJ_DIR)
 
 $(OBJECTS): $(OBJ_DIR)/%.o : $(SRC_DIR)/%.c
-	$(CC) $(CFLAGS) -c $^ -o $@ -MD $(LDFLAGS)
+	$(CC) $(CFLAGS) -c $< -o $@ -MD $(LDFLAGS)
 
 $(OBJ_DIR)/main.o : $(SRC_DIR)/main.c
 	$(CC) $(CFLAGS) -c $< -o $@ -MD $(LDFLAGS)
 
 $(OBJ_DIR)/repl.o : $(SRC_DIR)/repl.c
-	$(CC) $(CFLAGS) -c $< -o $@ -MD $(LDFLAGS)
+	$(CC) $(CFLAGS) $(INCLUDE) -c $< -o $@ -MD $(LDFLAGS)
 
 $(OBJ_DIR)/test_main.o : $(SRC_DIR)/test_main.c
 	$(CC) $(CFLAGS) -c $< -o $@ -MD $(LDFLAGS)
 
 main : $(RUN_OBJECTS)
-	$(CC) $(CFLAGS) $(INCLUDE) $(RUN_OBJECTS) -o $(TARGET) $(LDFLAGS)
+	$(CC) $(CFLAGS) $(RUN_OBJECTS) $(OBJ_DIR)/linenoise.o -o $(TARGET) $(LDFLAGS)
 
 test : $(TEST_OBJECTS)
 	$(CC) $(CFLAGS) $(TEST_OBJECTS) -o $(TEST_TARGET) $(LDFLAGS)

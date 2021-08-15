@@ -35,6 +35,7 @@ typedef void (*PrefixParseFn)(Parser*, Expr** output);
 typedef void (*InfixParseFn)(Parser*, Expr* output, Expr* left);
 
 void peekError(Parser*, TokenType);
+void illegalTokenFoundError(Parser* p);
 void noPrefixParseFnError(Parser*, TokenType);
 int curTokenIs(Parser*, TokenType);
 int peekTokenIs(Parser*, TokenType);

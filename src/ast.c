@@ -17,12 +17,12 @@ Program* mkProgram(void)
     output->tail = malloc(sizeof(struct ProgNode));
 
     output->head->before = NULL;
-    output->head->value = NULL;
-    output->head->next = output->tail;
+    output->head->value  = NULL;
+    output->head->next   = output->tail;
 
     output->tail->before = output->head;
-    output->tail->value = NULL;
-    output->tail->next = NULL;
+    output->tail->value  = NULL;
+    output->tail->next   = NULL;
 
     output->len = 0;
 
@@ -33,7 +33,7 @@ Stmt* mkStmt(void)
 {
     Stmt* output = malloc(sizeof(Stmt));
 
-    output->type = EMPTY_STMT;
+    output->type              = EMPTY_STMT;
     output->inner.checkIsNull = 0;
 
     return output;
@@ -43,7 +43,7 @@ Expr* mkExpr(void)
 {
     Expr* output = malloc(sizeof(Expr));
 
-    output->type = EMPTY_EXPR;
+    output->type              = EMPTY_EXPR;
     output->inner.checkIsNull = 0;
 
     return output;
@@ -53,7 +53,7 @@ LetStmt* mkLetStmt(void)
 {
     LetStmt* output = malloc(sizeof(LetStmt));
 
-    output->name = mkIdentExpr();
+    output->name  = mkIdentExpr();
     output->value = mkExpr();
 
     return output;
@@ -110,7 +110,7 @@ PrefixExpr* mkPrefixExpr(void)
 {
     PrefixExpr* output = malloc(sizeof(PrefixExpr));
 
-    output->opt = NULL;
+    output->opt   = NULL;
     output->right = mkExpr();
 
     return output;
@@ -120,8 +120,8 @@ InfixExpr* mkInfixExpr(void)
 {
     InfixExpr* output = malloc(sizeof(InfixExpr));
 
-    output->left = NULL;
-    output->opt = NULL;
+    output->left  = NULL;
+    output->opt   = NULL;
     output->right = mkExpr();
 
     return output;
@@ -131,7 +131,7 @@ IfExpr* mkIfExpr(void)
 {
     IfExpr* output = malloc(sizeof(IfExpr));
 
-    output->condition = mkExpr();
+    output->condition   = mkExpr();
     output->consequence = mkBlockStmt();
     output->alternative = NULL;
 
@@ -142,21 +142,21 @@ FntExpr* mkFntExpr(void)
 {
     FntExpr* output = malloc(sizeof(FntExpr));
 
-    output->parameters = malloc(sizeof(Parameters));
+    output->parameters       = malloc(sizeof(Parameters));
     output->parameters->head = malloc(sizeof(struct ParamNode));
     output->parameters->tail = malloc(sizeof(struct ParamNode));
-    output->parameters->len = 0;
+    output->parameters->len  = 0;
 
 #define head output->parameters->head
 #define tail output->parameters->tail
 
     head->before = NULL;
-    head->value = NULL;
-    head->next = tail;
+    head->value  = NULL;
+    head->next   = tail;
 
     tail->before = head;
-    tail->value = NULL;
-    tail->next = NULL;
+    tail->value  = NULL;
+    tail->next   = NULL;
 
 #undef tail
 #undef head
@@ -172,21 +172,21 @@ CallExpr* mkCallExpr(void)
 
     output->function = mkExpr();
 
-    output->arguments = malloc(sizeof(Arguments));
+    output->arguments       = malloc(sizeof(Arguments));
     output->arguments->head = malloc(sizeof(struct ArgNode));
     output->arguments->tail = malloc(sizeof(struct ArgNode));
-    output->arguments->len = 0;
+    output->arguments->len  = 0;
 
 #define head output->arguments->head
 #define tail output->arguments->tail
 
     head->before = NULL;
-    head->value = NULL;
-    head->next = tail;
+    head->value  = NULL;
+    head->next   = tail;
 
     tail->before = head;
-    tail->value = NULL;
-    tail->next = NULL;
+    tail->value  = NULL;
+    tail->next   = NULL;
 
 #undef tail
 #undef head
@@ -450,7 +450,7 @@ String* stringifyProgram(Program* pProg)
     if (!pProg)
         return NULL;
 
-    String* output = mkString("");
+    String* output       = mkString("");
     struct ProgNode* tmp = pProg->tail->before;
     while (tmp != pProg->head)
     {
@@ -562,7 +562,7 @@ String* stringifyReturnStmt(ReturnStmt* pReturnStmt)
         return NULL;
 
     String* output = mkString("return ");
-    if (!pReturnStmt->returnValue)
+    if (pReturnStmt->returnValue)
         concatFreeString(output, stringifyExpr(pReturnStmt->returnValue));
     appendStr(output, ";");
 
@@ -579,7 +579,10 @@ String* stringifyExprStmt(ExprStmt* pExprStmt)
 
 String* stringifyBlockStmt(BlockStmt* pBlockStmt)
 {
-    return stringifyProgram((Program*)pBlockStmt);
+    String* output = mkString("{ ");
+    concatFreeString(output, stringifyProgram((Program*)pBlockStmt));
+    appendStr(output, " }");
+    return output;
 }
 
 String* stringifyIdentExpr(IdentExpr* pIdentExpr)
@@ -710,10 +713,10 @@ void pushStmt(Program* pProg, Stmt** pStmt)
     struct ProgNode* tmp = malloc(sizeof(struct ProgNode));
 
     tmp->value = *pStmt;
-    *pStmt = NULL;
+    *pStmt     = NULL;
 
-    tmp->before = pProg->head;
-    tmp->next = pProg->head->next;
+    tmp->before       = pProg->head;
+    tmp->next         = pProg->head->next;
     pProg->head->next = tmp;
     tmp->next->before = tmp;
 
@@ -732,7 +735,7 @@ Stmt* popStmt(Program* pProg)
     Stmt* output = tmp->value;
     --pProg->len;
 
-    pProg->tail->before = tmp->before;
+    pProg->tail->before       = tmp->before;
     pProg->tail->before->next = pProg->tail;
 
     free(tmp);
@@ -748,12 +751,12 @@ void pushParam(Parameters* pParam, IdentExpr** pIdent)
     struct ParamNode* tmp = malloc(sizeof(struct ParamNode));
 
     tmp->value = *pIdent;
-    *pIdent = NULL;
+    *pIdent    = NULL;
 
-    tmp->before = pParam->head;
-    tmp->next = pParam->head->next;
+    tmp->before        = pParam->head;
+    tmp->next          = pParam->head->next;
     pParam->head->next = tmp;
-    tmp->next->before = tmp;
+    tmp->next->before  = tmp;
 
     ++pParam->len;
 }
@@ -766,10 +769,10 @@ void pushArgs(Arguments* pArgs, Expr** pExpr)
     struct ArgNode* tmp = malloc(sizeof(struct ArgNode));
 
     tmp->value = *pExpr;
-    *pExpr = NULL;
+    *pExpr     = NULL;
 
-    tmp->before = pArgs->head;
-    tmp->next = pArgs->head->next;
+    tmp->before       = pArgs->head;
+    tmp->next         = pArgs->head->next;
     pArgs->head->next = tmp;
     tmp->next->before = tmp;
 
