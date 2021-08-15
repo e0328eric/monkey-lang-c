@@ -3,7 +3,7 @@ PWD := $(shell pwd)
 CC := clang
 CFLAGS = -std=c11 -O3 -Wall -Wextra -Wpedantic -Wconversion
 # For Debugging
-CFLAGS += -ggdb
+# CFLAGS += -ggdb
 INCLUDE = -I$(PWD)/lib/linenoise
 LDFLAGS =
 
