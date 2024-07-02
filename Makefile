@@ -37,6 +37,7 @@ DEPS += $(TEST_OBJECTS:.o=.d)
 all: linenoise main
 
 linenoise:
+	mkdir $(OBJ_DIR)
 	cd $(PWD)/lib/linenoise/ && $(CC) -c linenoise.c -o linenoise.o
 	mv $(PWD)/lib/linenoise/linenoise.o $(OBJ_DIR)
 
@@ -60,6 +61,7 @@ test : $(TEST_OBJECTS)
 
 .PHONY: clean all
 clean:
+	rm -f $(OBJ_DIR)
 	rm -f $(RUN_OBJECTS) $(DEPS) $(TARGET) $(TEST_TARGET)
 	rm -f $(TEST_OBJECTS) $(DEPS) $(TARGET) $(TEST_TARGET)
 
